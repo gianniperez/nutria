@@ -1,0 +1,17 @@
+{
+  "name": "Nutria — Nutrición & Ciclo Menstrual",
+  "short_name": "Nutria",
+  "description": "App de nutrición, macros y sincronización con el ciclo menstrual con estética boutique y privacidad local-first.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAFAF7",
+  "theme_color": "#8E9A76",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

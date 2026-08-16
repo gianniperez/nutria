@@ -1,11 +1,5 @@
-import { HelloWorld } from "@/components/HelloWorld";
+import DiarioPage from "./diario/page";
 
-export default function Home() {
-  return (
-    <div>
-      <main>
-        <HelloWorld>Hello World</HelloWorld>
-      </main>
-    </div>
-  );
+export default function HomePage() {
+  return <DiarioPage />;
 }

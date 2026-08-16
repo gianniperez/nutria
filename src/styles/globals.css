@@ -1,10 +1,190 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #0070f3;
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+
+  --color-bg: var(--color-bg);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-border: var(--color-border);
+  --color-text-main: var(--color-text-main);
+  --color-text-muted: var(--color-text-muted);
+
+  --color-primary-light: var(--color-primary-light);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-text: var(--color-primary-text);
+
+  --color-secondary-light: var(--color-secondary-light);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-dark: var(--color-secondary-dark);
+  --color-secondary-text: var(--color-secondary-text);
+
+  --color-accent-light: var(--color-accent-light);
+  --color-accent: var(--color-accent);
+  --color-accent-dark: var(--color-accent-dark);
+
+  --color-menstrual-light: var(--color-menstrual-light);
+  --color-menstrual: var(--color-menstrual);
+  --color-menstrual-dark: var(--color-menstrual-dark);
+
+  --color-love-light: var(--color-love-light);
+  --color-love: var(--color-love);
+  --color-love-dark: var(--color-love-dark);
+
+  --color-macro-carbs: var(--color-macro-carbs);
+  --color-macro-protein: var(--color-macro-protein);
+  --color-macro-fat: var(--color-macro-fat);
+
+  --radius-card: var(--radius-card);
+  --radius-button: var(--radius-button);
+}
+
+:root,
+[data-theme="matcha-peach"] {
+  /* Fondos y Superficies */
+  --color-bg: #FDFBF7;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F7F3EC;
+  --color-border: #EFE8DE;
+  --color-text-main: #332B29;
+  --color-text-muted: #7E726E;
+
+  /* Primary (Peach) */
+  --color-primary-light: #FFD5CC;
+  --color-primary: #FFB4A2;
+  --color-primary-dark: #E68D77;
+  --color-primary-text: #5A2A20;
+
+  /* Secondary (Matcha) */
+  --color-secondary-light: #E0EBC7;
+  --color-secondary: #C5D8A4;
+  --color-secondary-dark: #9AB472;
+  --color-secondary-text: #2D4016;
+
+  /* Accent (Terracotta) */
+  --color-accent-light: #F4A792;
+  --color-accent: #E07A5F;
+  --color-accent-dark: #B85338;
+
+  /* Menstrual (Coral Red) */
+  --color-menstrual-light: #FFE2E3;
+  --color-menstrual: #E76F74;
+  --color-menstrual-dark: #C2484E;
+
+  /* Love / Intimacy (Rose) */
+  --color-love-light: #FCD6E5;
+  --color-love: #F49AC2;
+  --color-love-dark: #CF6595;
+
+  /* Macros */
+  --color-macro-carbs: #F4A261;
+  --color-macro-protein: #E76F51;
+  --color-macro-fat: #2A9D8F;
+
+  --radius-card: 1.25rem;
+  --radius-button: 0.875rem;
+}
+
+[data-theme="cyber-lilac"] {
+  /* Fondos y Superficies */
+  --color-bg: #FAF7FD;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F2ECFA;
+  --color-border: #EADBFA;
+  --color-text-main: #2A2333;
+  --color-text-muted: #756B82;
+
+  /* Primary (Lilac) */
+  --color-primary-light: #EADBFA;
+  --color-primary: #D4BEE4;
+  --color-primary-dark: #B08FC9;
+  --color-primary-text: #3D2254;
+
+  /* Secondary (Blush Pink) */
+  --color-secondary-light: #FDE2ED;
+  --color-secondary: #F8C8DC;
+  --color-secondary-dark: #DB98B3;
+  --color-secondary-text: #522036;
+
+  /* Accent (Berry) */
+  --color-accent-light: #EE81A3;
+  --color-accent: #D84A75;
+  --color-accent-dark: #A62950;
+
+  /* Menstrual */
+  --color-menstrual-light: #FDE8EF;
+  --color-menstrual: #D84A75;
+  --color-menstrual-dark: #A62950;
+
+  /* Love */
+  --color-love-light: #FFA6C9;
+  --color-love: #FF70A6;
+  --color-love-dark: #D93B78;
+
+  /* Macros */
+  --color-macro-carbs: #D4BEE4;
+  --color-macro-protein: #D84A75;
+  --color-macro-fat: #7EB0D5;
+
+  --radius-card: 1.25rem;
+  --radius-button: 0.875rem;
+}
+
+[data-theme="warm-otter"] {
+  /* Fondos y Superficies */
+  --color-bg: #FBF8F4;
+  --color-surface: #FFFFFF;
+  --color-surface-hover: #F5EFE6;
+  --color-border: #E9DECE;
+  --color-text-main: #2F2923;
+  --color-text-muted: #786C60;
+
+  /* Primary (Otter Caramel) */
+  --color-primary-light: #E8C497;
+  --color-primary: #D9A566;
+  --color-primary-dark: #B37D3D;
+  --color-primary-text: #422B0E;
+
+  /* Secondary (Soft Aqua) */
+  --color-secondary-light: #CEEBEB;
+  --color-secondary: #A8DADC;
+  --color-secondary-dark: #74B1B3;
+  --color-secondary-text: #1D3557;
+
+  /* Accent (Warm Coral) */
+  --color-accent-light: #F2957D;
+  --color-accent: #E76F51;
+  --color-accent-dark: #BF472A;
+
+  /* Menstrual */
+  --color-menstrual-light: #FCE8E9;
+  --color-menstrual: #E63946;
+  --color-menstrual-dark: #B51B27;
+
+  /* Love */
+  --color-love-light: #F8C39B;
+  --color-love: #F4A261;
+  --color-love-dark: #CB722E;
+
+  /* Macros */
+  --color-macro-carbs: #F4A261;
+  --color-macro-protein: #E63946;
+  --color-macro-fat: #A8DADC;
+
+  --radius-card: 1.25rem;
+  --radius-button: 0.875rem;
 }
 
 body {
-  background-color: #ffffff;
-  color: #333333;
+  background-color: var(--color-bg);
+  color: var(--color-text-main);
+  font-family: var(--font-sans), sans-serif;
+  min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+h1, h2, h3, h4, h5, h6, .font-display {
+  font-family: var(--font-display), serif;
 }
