@@ -1,4 +1,4 @@
-import { db, ensureSeedIngredientsLoaded } from "@/lib/db";
+import { db } from "@/lib/db";
 import { firestore, auth } from "@/lib/firebase";
 import { doc, setDoc, deleteDoc } from "firebase/firestore";
 import { cleanForFirestore } from "@/utils/firestoreHelpers";
@@ -6,11 +6,9 @@ import type { Ingredient } from "@/types/database";
 
 export const foodsApi = {
   /**
-   * Obtiene todos los alimentos de Dexie asegurando la carga de los ingredientes curados.
+   * Obtiene todos los alimentos de Dexie de forma estrictamente de solo lectura.
    */
   async getIngredients(userId = "current_user"): Promise<Ingredient[]> {
-    await ensureSeedIngredientsLoaded(userId);
-
     const all = await db.ingredients.toArray();
 
     // Retornar alimentos del usuario y alimentos base

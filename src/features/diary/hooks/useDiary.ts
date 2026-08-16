@@ -340,7 +340,40 @@ export function useDiary(initialDate?: string) {
     [dailyLog, persistLog]
   );
 
-  // 8. Ayuno Intermitente
+  // 8. Actualizar Ejercicio
+  const updateExercise = useCallback(
+    async (
+      exerciseId: string,
+      name: string,
+      durationMinutes: number,
+      caloriesBurned: number,
+      baseDurationMinutes = 45
+    ) => {
+      const currentExercises = dailyLog.exercises || [];
+      const updatedExercises = currentExercises.map((ex) => {
+        if (ex.id === exerciseId) {
+          return {
+            ...ex,
+            name,
+            durationMinutes,
+            baseDurationMinutes,
+            baseCalories: caloriesBurned,
+            caloriesBurned,
+            loggedAt: Date.now(),
+          };
+        }
+        return ex;
+      });
+
+      await persistLog({
+        ...dailyLog,
+        exercises: updatedExercises,
+      });
+    },
+    [dailyLog, persistLog]
+  );
+
+  // 9. Ayuno Intermitente
   const startFasting = useCallback(
     async (targetHours = 16) => {
       const newSession: FastingSession = {
@@ -416,6 +449,7 @@ export function useDiary(initialDate?: string) {
     removeMealItem,
     updateMealItemQuantity,
     logExercise,
+    updateExercise,
     removeExercise,
     startFasting,
     endFasting,

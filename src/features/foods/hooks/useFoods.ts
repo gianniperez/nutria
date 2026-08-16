@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "@/providers/AuthProvider";
+import { ensureSeedIngredientsLoaded } from "@/lib/db";
 import { foodsApi } from "../api/foodsApi";
 import type { Ingredient } from "@/types/database";
 import type { FoodFormData } from "../types";
@@ -12,7 +13,12 @@ export function useFoods() {
   const [searchQuery, setSearchQuery] = useState("");
   const [favoritesOnly, setFavoritesOnly] = useState(false);
 
-  // Consulta reactiva en vivo
+  // Asegurar carga de alimentos base fuera de la transacción de solo lectura
+  useEffect(() => {
+    ensureSeedIngredientsLoaded(userId || "current_user");
+  }, [userId]);
+
+  // Consulta reactiva en vivo (estrictamente de solo lectura)
   const allFoods = useLiveQuery(async () => {
     return await foodsApi.getIngredients(userId);
   }, [userId]);

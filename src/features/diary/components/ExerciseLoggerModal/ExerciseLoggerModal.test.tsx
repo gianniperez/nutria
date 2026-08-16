@@ -54,4 +54,45 @@ describe("ExerciseLoggerModal", () => {
 
     expect(handleLog).toHaveBeenCalledWith("Baile", 60, 438, 60);
   });
+
+  it("renderiza en modo edición con initialExercise y llama a onUpdateExercise", async () => {
+    const handleUpdate = vi.fn().mockResolvedValue(undefined);
+    const mockExercise = {
+      id: "ex-123",
+      name: "Cardio / HIIT",
+      durationMinutes: 20,
+      baseDurationMinutes: 20,
+      baseCalories: 170,
+      caloriesBurned: 170,
+      loggedAt: Date.now(),
+    };
+
+    render(
+      <ExerciseLoggerModal
+        isOpen={true}
+        onClose={vi.fn()}
+        onLogExercise={vi.fn()}
+        onUpdateExercise={handleUpdate}
+        initialExercise={mockExercise}
+        userWeightKg={60}
+      />
+    );
+
+    expect(screen.getByText("Editar Ejercicio")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("Cardio / HIIT")).toBeInTheDocument();
+
+    const saveButton = screen.getByRole("button", { name: /guardar \(\+170 kcal\)/i });
+    await act(async () => {
+      fireEvent.click(saveButton);
+    });
+
+    expect(handleUpdate).toHaveBeenCalledWith(
+      "ex-123",
+      "Cardio / HIIT",
+      20,
+      170,
+      20
+    );
+  });
 });
+

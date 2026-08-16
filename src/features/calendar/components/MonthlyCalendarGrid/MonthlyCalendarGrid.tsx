@@ -10,9 +10,13 @@ interface MonthlyCalendarGridProps {
   onSelectDay: (cell: CalendarDayCell) => void;
 }
 
-export function MonthlyCalendarGrid({ cells, onSelectDay }: MonthlyCalendarGridProps) {
+export function MonthlyCalendarGrid({
+  cells,
+  onSelectDay,
+}: MonthlyCalendarGridProps) {
   const getPhaseBackground = (phase: string, isCurrentMonth: boolean) => {
-    if (!isCurrentMonth) return "bg-surface/40 text-text-muted/40 border-border/30";
+    if (!isCurrentMonth)
+      return "bg-surface/40 text-text-muted/40 border-border/30";
 
     switch (phase) {
       case "menstrual":
@@ -42,16 +46,21 @@ export function MonthlyCalendarGrid({ cells, onSelectDay }: MonthlyCalendarGridP
       {/* Celdas del Calendario */}
       <div className="grid grid-cols-7 gap-1.5">
         {cells.map((cell) => {
-          const bgClass = getPhaseBackground(cell.cycleInfo.phase, cell.isCurrentMonth);
+          const bgClass = getPhaseBackground(
+            cell.cycleInfo.phase,
+            cell.isCurrentMonth,
+          );
           const hasLoveNote = cell.dailyLog?.hasLoveNote;
-          const isPeriod = cell.dailyLog?.isPeriodActive || cell.cycleInfo.phase === "menstrual";
+          const isPeriod =
+            cell.dailyLog?.isPeriodActive ||
+            cell.cycleInfo.phase === "menstrual";
 
           return (
             <button
               key={cell.dateStr}
               type="button"
               onClick={() => onSelectDay(cell)}
-              className={`min-h-[72px] sm:min-h-[85px] p-1.5 rounded-card border transition-all flex flex-col justify-between text-left cursor-pointer ${bgClass} ${
+              className={`min-h-[72px] sm:min-h-[85px] p-1.5 rounded-xl border border-border transition-all flex flex-col justify-between text-left cursor-pointer ${bgClass} ${
                 cell.isToday ? "ring-2 ring-primary shadow-xs" : ""
               }`}
             >
@@ -62,8 +71,8 @@ export function MonthlyCalendarGrid({ cells, onSelectDay }: MonthlyCalendarGridP
                     cell.isToday
                       ? "text-primary-text bg-primary px-1.5 py-0.2 rounded-full"
                       : cell.isCurrentMonth
-                      ? "text-text-main"
-                      : "text-text-muted/50"
+                        ? "text-text-main"
+                        : "text-text-muted/50"
                   }`}
                 >
                   {cell.dayNumber}
@@ -71,10 +80,16 @@ export function MonthlyCalendarGrid({ cells, onSelectDay }: MonthlyCalendarGridP
 
                 <div className="flex items-center gap-0.5">
                   {hasLoveNote && (
-                    <Heart weight="fill" className="w-3 h-3 text-love-dark animate-pulse" />
+                    <Heart
+                      weight="fill"
+                      className="w-3 h-3 text-love-dark animate-pulse"
+                    />
                   )}
                   {isPeriod && (
-                    <Drop weight="fill" className="w-3 h-3 text-menstrual-dark" />
+                    <Drop
+                      weight="fill"
+                      className="w-3 h-3 text-menstrual-dark"
+                    />
                   )}
                 </div>
               </div>
@@ -86,7 +101,9 @@ export function MonthlyCalendarGrid({ cells, onSelectDay }: MonthlyCalendarGridP
                     <span>{cell.totalCalories} kcal</span>
                     <span
                       className={`w-1.5 h-1.5 rounded-full ${
-                        cell.isCalorieGoalMet ? "bg-primary-dark" : "bg-[#F4A261]"
+                        cell.isCalorieGoalMet
+                          ? "bg-primary-dark"
+                          : "bg-[#F4A261]"
                       }`}
                     />
                   </div>

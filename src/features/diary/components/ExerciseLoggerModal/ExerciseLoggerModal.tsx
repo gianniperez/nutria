@@ -21,6 +21,7 @@ import {
   calculateExerciseCalories,
   type PresetExercise,
 } from "@/utils/nutritionCalculations";
+import type { ExerciseEntry } from "@/types/database";
 
 const PRESET_ICONS: Record<string, React.ReactNode> = {
   Pesas: <Barbell weight="duotone" className="w-4 h-4 text-primary-text" />,
@@ -40,6 +41,14 @@ interface ExerciseLoggerModalProps {
     baseCalories: number,
     baseDurationMinutes: number
   ) => Promise<void>;
+  onUpdateExercise?: (
+    exerciseId: string,
+    name: string,
+    durationMinutes: number,
+    caloriesBurned: number,
+    baseDurationMinutes: number
+  ) => Promise<void>;
+  initialExercise?: ExerciseEntry | null;
   userWeightKg?: number;
 }
 
@@ -47,15 +56,33 @@ export function ExerciseLoggerModal({
   isOpen,
   onClose,
   onLogExercise,
+  onUpdateExercise,
+  initialExercise,
   userWeightKg,
 }: ExerciseLoggerModalProps) {
   const { profile } = useProfile();
   const weightKg = userWeightKg || profile?.weightKg || 60;
 
-  const [exerciseName, setExerciseName] = useState(EXERCISE_PRESETS[0].name);
-  const [currentMet, setCurrentMet] = useState(EXERCISE_PRESETS[0].met);
-  const [durationMinutes, setDurationMinutes] = useState(EXERCISE_PRESETS[0].defaultDurationMinutes);
+  const [prevExerciseId, setPrevExerciseId] = useState<string | null>(initialExercise?.id ?? null);
+  const [exerciseName, setExerciseName] = useState(initialExercise?.name || EXERCISE_PRESETS[0].name);
+  const initialPreset = EXERCISE_PRESETS.find((p) => p.name.toLowerCase() === (initialExercise?.name || "").toLowerCase()) || EXERCISE_PRESETS[0];
+  const [currentMet, setCurrentMet] = useState(initialPreset.met);
+  const [durationMinutes, setDurationMinutes] = useState(initialExercise?.durationMinutes || initialPreset.defaultDurationMinutes);
   const [isLogging, setIsLogging] = useState(false);
+
+  // Sincronizar durante el render cuando cambia initialExercise
+  if (initialExercise && initialExercise.id !== prevExerciseId) {
+    setPrevExerciseId(initialExercise.id);
+    setExerciseName(initialExercise.name);
+    const matched = EXERCISE_PRESETS.find((p) => p.name.toLowerCase() === initialExercise.name.toLowerCase());
+    setCurrentMet(matched ? matched.met : 6.0);
+    setDurationMinutes(initialExercise.durationMinutes);
+  } else if (!initialExercise && prevExerciseId !== null) {
+    setPrevExerciseId(null);
+    setExerciseName(EXERCISE_PRESETS[0].name);
+    setCurrentMet(EXERCISE_PRESETS[0].met);
+    setDurationMinutes(EXERCISE_PRESETS[0].defaultDurationMinutes);
+  }
 
   const handleSelectPreset = (preset: PresetExercise) => {
     setExerciseName(preset.name);
@@ -72,12 +99,22 @@ export function ExerciseLoggerModal({
 
     setIsLogging(true);
     try {
-      await onLogExercise(
-        exerciseName,
-        durationMinutes,
-        calculatedCalories,
-        durationMinutes
-      );
+      if (initialExercise && onUpdateExercise) {
+        await onUpdateExercise(
+          initialExercise.id,
+          exerciseName,
+          durationMinutes,
+          calculatedCalories,
+          durationMinutes
+        );
+      } else {
+        await onLogExercise(
+          exerciseName,
+          durationMinutes,
+          calculatedCalories,
+          durationMinutes
+        );
+      }
       onClose();
     } finally {
       setIsLogging(false);
@@ -91,10 +128,14 @@ export function ExerciseLoggerModal({
       title={
         <div className="flex items-center gap-2">
           <Barbell weight="duotone" className="w-5 h-5 text-secondary-text" />
-          <span>Registrar Ejercicio</span>
+          <span>{initialExercise ? "Editar Ejercicio" : "Registrar Ejercicio"}</span>
         </div>
       }
-      description="El gasto energético se calcula según tu peso actual y la intensidad metabólica (MET)."
+      description={
+        initialExercise
+          ? "Modifica la duración o la actividad para recalcular las calorías."
+          : "El gasto energético se calcula según tu peso actual y la intensidad metabólica (MET)."
+      }
       maxWidth="sm"
       footer={
         <div className="flex items-center justify-between gap-2 w-full">
@@ -108,7 +149,9 @@ export function ExerciseLoggerModal({
             leftIcon={<CheckCircle weight="bold" className="w-4 h-4" />}
             onClick={handleSubmit}
           >
-            Registrar (+{calculatedCalories} kcal)
+            {initialExercise
+              ? `Guardar (+${calculatedCalories} kcal)`
+              : `Registrar (+${calculatedCalories} kcal)`}
           </Button>
         </div>
       }

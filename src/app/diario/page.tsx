@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Barbell, Trash } from "@phosphor-icons/react";
+import { Plus, Barbell, Trash, PencilSimple } from "@phosphor-icons/react";
 import {
   useDiary,
   MEAL_SLOTS,
@@ -20,7 +20,7 @@ import { CircularProgress } from "@/components/CircularProgress";
 import { MacroProgressBar } from "@/components/MacroProgressBar";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
-import type { MealType, LoggedFoodItem } from "@/types/database";
+import type { MealType, LoggedFoodItem, ExerciseEntry } from "@/types/database";
 
 export default function DiarioPage() {
   const {
@@ -37,6 +37,7 @@ export default function DiarioPage() {
     removeMealItem,
     updateMealItemQuantity,
     logExercise,
+    updateExercise,
     removeExercise,
     startFasting,
     endFasting,
@@ -59,6 +60,7 @@ export default function DiarioPage() {
   } | null>(null);
 
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<ExerciseEntry | null>(null);
 
   // Porcentaje de calorías consumidas vs meta
   const caloriePercentage = summary.targetCalories > 0
@@ -221,13 +223,22 @@ export default function DiarioPage() {
                   </span>
                 </div>
 
-                <IconButton
-                  icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-menstrual" />}
-                  aria-label="Eliminar ejercicio"
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => removeExercise(ex.id)}
-                />
+                <div className="flex items-center gap-0.5 shrink-0">
+                  <IconButton
+                    icon={<PencilSimple weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-primary" />}
+                    aria-label="Editar ejercicio"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setEditingExercise(ex)}
+                  />
+                  <IconButton
+                    icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-menstrual" />}
+                    aria-label="Eliminar ejercicio"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => removeExercise(ex.id)}
+                  />
+                </div>
               </div>
             ))}
           </div>
@@ -280,11 +291,18 @@ export default function DiarioPage() {
         />
       )}
 
-      <ExerciseLoggerModal
-        isOpen={isExerciseModalOpen}
-        onClose={() => setIsExerciseModalOpen(false)}
-        onLogExercise={logExercise}
-      />
+      {(isExerciseModalOpen || editingExercise) && (
+        <ExerciseLoggerModal
+          isOpen={Boolean(isExerciseModalOpen || editingExercise)}
+          onClose={() => {
+            setIsExerciseModalOpen(false);
+            setEditingExercise(null);
+          }}
+          onLogExercise={logExercise}
+          onUpdateExercise={updateExercise}
+          initialExercise={editingExercise}
+        />
+      )}
     </main>
   );
 }

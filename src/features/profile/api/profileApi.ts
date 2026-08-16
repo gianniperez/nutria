@@ -6,7 +6,7 @@ import type { UserProfile } from "@/types/database";
 
 export const profileApi = {
   /**
-   * Obtiene el perfil de la base de datos local Dexie priorizando siempre el usuario activo.
+   * Obtiene el perfil de la base de datos local Dexie de forma estrictamente de solo lectura.
    */
   async getLocalProfile(userId?: string | null): Promise<UserProfile | undefined> {
     const activeUid = (userId && userId !== "current_user") ? userId : auth.currentUser?.uid;
@@ -18,13 +18,6 @@ export const profileApi = {
 
     const guestProf = await db.profile.get("current_user");
     if (guestProf) {
-      if (activeUid) {
-        // Migrar inmediatamente la clave primaria a la del usuario autenticado
-        const migrated: UserProfile = { ...guestProf, userId: activeUid, updatedAt: guestProf.updatedAt || Date.now() };
-        await db.profile.put(migrated);
-        await db.profile.delete("current_user");
-        return migrated;
-      }
       return guestProf;
     }
 
