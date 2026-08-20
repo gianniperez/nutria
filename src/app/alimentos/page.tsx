@@ -83,7 +83,7 @@ export default function AlimentosPage() {
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
-          placeholder="Buscar por nombre o marca (ej. Pollo, Avena, Yogur)..."
+          placeholder="Buscar por nombre o marca..."
         />
 
         <button
@@ -99,7 +99,7 @@ export default function AlimentosPage() {
             weight={favoritesOnly ? "fill" : "regular"}
             className="w-4 h-4"
           />
-          <span>Solo Favoritos</span>
+          <span>Favoritos</span>
         </button>
       </div>
 

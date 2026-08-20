@@ -1,12 +1,13 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Poppins } from "next/font/google";
+import { Nunito, Poppins } from "next/font/google";
 import { AppProvider } from "@/providers/AppProvider";
 import { NavigationShell } from "@/components/NavigationShell";
 import "@/styles/globals.css";
 
-const fraunces = Fraunces({
+const nunito = Nunito({
+  weight: ["400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
-  variable: "--font-fraunces",
+  variable: "--font-nunito",
   display: "swap",
 });
 
@@ -43,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" data-theme="matcha-peach" className={`${fraunces.variable} ${poppins.variable}`}>
+    <html lang="es" data-theme="matcha-peach" className={`${nunito.variable} ${poppins.variable}`}>
       <body className="font-sans antialiased min-h-screen bg-background text-text-main">
         <AppProvider>
           <NavigationShell>{children}</NavigationShell>

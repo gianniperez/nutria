@@ -1,7 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Star, BowlFood, Calculator, PencilSimple } from "@phosphor-icons/react";
+import {
+  Star,
+  BowlFood,
+  Calculator,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import { Card } from "@/components/Card";
 import { IconButton } from "@/components/IconButton";
 import { MacroNutrientPill } from "@/components/MacroNutrientPill";
@@ -55,15 +60,14 @@ export function FoodItemCard({
           </div>
 
           <span className="text-xs text-text-muted mt-0.5">
-            Porción base: {food.portionGrams}
-            {food.portionUnit}
+            {food.portionGrams}
+            {food.portionUnit} • {food.calories} kcal
           </span>
         </div>
       </div>
 
       {/* Desglose de Macros */}
       <div className="flex flex-wrap items-center gap-1.5">
-        <MacroNutrientPill type="calories" value={food.calories} size="sm" />
         <MacroNutrientPill type="protein" value={food.proteinG} size="sm" />
         <MacroNutrientPill type="carbs" value={food.carbsG} size="sm" />
         <MacroNutrientPill type="fat" value={food.fatG} size="sm" />
@@ -73,7 +77,12 @@ export function FoodItemCard({
       <div className="flex items-center gap-1 self-end sm:self-center shrink-0">
         {onCalculatePortion && (
           <IconButton
-            icon={<Calculator weight="duotone" className="w-4 h-4 text-secondary-text" />}
+            icon={
+              <Calculator
+                weight="duotone"
+                className="w-4 h-4 text-secondary-text"
+              />
+            }
             aria-label="Calcular porción"
             size="sm"
             variant="ghost"
@@ -83,7 +92,9 @@ export function FoodItemCard({
 
         {onEdit && (
           <IconButton
-            icon={<PencilSimple weight="bold" className="w-4 h-4 text-text-muted" />}
+            icon={
+              <PencilSimple weight="bold" className="w-4 h-4 text-text-muted" />
+            }
             aria-label="Editar alimento"
             size="sm"
             variant="ghost"
@@ -102,7 +113,9 @@ export function FoodItemCard({
               />
             </motion.span>
           }
-          aria-label={food.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"}
+          aria-label={
+            food.isFavorite ? "Quitar de favoritos" : "Marcar como favorito"
+          }
           size="sm"
           variant="ghost"
           onClick={() => onToggleFavorite(food.id, food.isFavorite)}

@@ -10,8 +10,8 @@ import {
   ChartLineUp,
   User,
 } from "@phosphor-icons/react";
-import { NutriaMascot } from "../NutriaMascot";
 import type { NavItem, NavigationShellProps } from "./NavigationShell.types";
+import Image from "next/image";
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Diario", href: "/diario", iconName: "BookOpen" },
@@ -26,7 +26,9 @@ function getNavIcon(name: NavItem["iconName"], isActive: boolean) {
   const props = {
     weight: isActive ? ("fill" as const) : ("duotone" as const),
     className: `w-5 h-5 transition-transform ${
-      isActive ? "text-primary-text scale-110" : "text-text-muted hover:text-text-main"
+      isActive
+        ? "text-primary-text scale-110"
+        : "text-text-muted hover:text-text-main"
     }`,
   };
 
@@ -63,9 +65,9 @@ export function NavigationShell({ children }: NavigationShellProps) {
       <header className="sticky top-0 z-40 hidden md:flex items-center justify-between px-6 py-3 bg-surface/85 backdrop-blur-md border-b border-border transition-colors">
         {/* Logo & Marca */}
         <Link href="/diario" className="flex items-center gap-2.5 group">
-          <NutriaMascot state="mood5" size="sm" />
-          <span className="font-display font-bold text-2xl text-text-main tracking-tight group-hover:text-primary-text transition-colors">
-            Nutria
+          <Image src="/isologo.png" alt="Logo" width={54} height={54} />
+          <span className="absolute ml-8 mb-6 font-display font-extrabold text-2xl text-[#69463D] transition-colors">
+            nutria
           </span>
         </Link>
 
