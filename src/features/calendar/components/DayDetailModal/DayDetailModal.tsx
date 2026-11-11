@@ -27,7 +27,7 @@ export function DayDetailModal({ cell, onClose }: DayDetailModalProps) {
 
   const handleGoToDiary = () => {
     onClose();
-    router.push(`/diario`);
+    router.push(`/diario?date=${cell.dateStr}`);
   };
 
   // Calcular macros del día si existen
@@ -96,6 +96,12 @@ export function DayDetailModal({ cell, onClose }: DayDetailModalProps) {
           >
             {cell.cycleInfo.phaseName}
           </Badge>
+
+          {cell.dailyLog?.isPeriodActive && (
+            <Badge variant="menstrual" size="md">
+              Sangrado menstrual 🩸
+            </Badge>
+          )}
 
           {cell.dailyLog?.hasLoveNote && (
             <Badge variant="love" size="md" icon={<Heart weight="fill" className="w-3.5 h-3.5" />}>

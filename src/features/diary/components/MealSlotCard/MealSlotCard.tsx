@@ -104,7 +104,11 @@ export function MealSlotCard({
               <div className="flex flex-col min-w-0 flex-1 px-1.5">
                 <span className="font-semibold text-text-main truncate">{item.name}</span>
                 <div className="flex items-center gap-2 text-text-muted mt-0.5">
-                  <span>{item.quantityGrams > 5 ? `${item.quantityGrams}g` : ""}</span>
+                  <span>
+                    {item.recipeId
+                      ? `${item.quantityGrams} ${item.quantityGrams === 1 ? "porción" : "porciones"}`
+                      : `${item.quantityGrams}g`}
+                  </span>
                   <span className="font-semibold text-text-main">{item.calories} kcal</span>
                   <span>(P: {item.proteinG}g | C: {item.carbsG}g | G: {item.fatG}g)</span>
                 </div>

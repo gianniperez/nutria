@@ -51,16 +51,16 @@ export function MonthlyCalendarGrid({
             cell.isCurrentMonth,
           );
           const hasLoveNote = cell.dailyLog?.hasLoveNote;
-          const isPeriod =
-            cell.dailyLog?.isPeriodActive ||
-            cell.cycleInfo.phase === "menstrual";
+          const isLoggedPeriod = Boolean(cell.dailyLog?.isPeriodActive);
+          const isPredictedPeriod =
+            !isLoggedPeriod && cell.cycleInfo.phase === "menstrual";
 
           return (
             <button
               key={cell.dateStr}
               type="button"
               onClick={() => onSelectDay(cell)}
-              className={`min-h-[72px] sm:min-h-[85px] p-1.5 rounded-xl border border-border transition-all flex flex-col justify-between text-left cursor-pointer ${bgClass} ${
+              className={`min-h-[76px] sm:min-h-[88px] p-1.5 rounded-xl border border-border transition-all flex flex-col justify-between text-left cursor-pointer ${bgClass} ${
                 cell.isToday ? "ring-2 ring-primary shadow-xs" : ""
               }`}
             >
@@ -80,39 +80,56 @@ export function MonthlyCalendarGrid({
 
                 <div className="flex items-center gap-0.5">
                   {hasLoveNote && (
-                    <Heart
-                      weight="fill"
-                      className="w-3 h-3 text-love-dark animate-pulse"
-                    />
+                    <span title="Nota de Amor 💕">
+                      <Heart
+                        weight="fill"
+                        className="w-3.5 h-3.5 text-love-dark animate-pulse"
+                      />
+                    </span>
                   )}
-                  {isPeriod && (
-                    <Drop
-                      weight="fill"
-                      className="w-3 h-3 text-menstrual-dark"
-                    />
+                  {isLoggedPeriod && (
+                    <span title="Sangrado registrado 🩸">
+                      <Drop
+                        weight="fill"
+                        className="w-3.5 h-3.5 text-menstrual-dark"
+                      />
+                    </span>
+                  )}
+                  {isPredictedPeriod && (
+                    <span title="Periodo previsto">
+                      <Drop
+                        weight="duotone"
+                        className="w-3.5 h-3.5 text-menstrual/80"
+                      />
+                    </span>
                   )}
                 </div>
               </div>
 
-              {/* Registro Calórico y Actividad */}
-              <div className="flex flex-col gap-0.5 mt-auto">
-                {cell.totalCalories > 0 ? (
-                  <div className="flex items-center justify-between text-[10px] font-semibold text-text-main bg-surface/70 px-1 py-0.5 rounded-sm">
-                    <span>{cell.totalCalories} kcal</span>
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        cell.isCalorieGoalMet
-                          ? "bg-primary-dark"
-                          : "bg-[#F4A261]"
-                      }`}
-                    />
+              {/* Registro de Ciclo Menstrual y Calorías */}
+              {cell.isCurrentMonth && (
+                <div className="flex flex-col gap-0.5 mt-auto w-full pt-1">
+                  <div className="flex items-center justify-between text-[10px] leading-tight text-text-muted px-0.5">
+                    <span className="font-bold text-text-main/80">
+                      D{cell.cycleInfo.cycleDay}
+                    </span>
+                    <span className="text-[9px] uppercase tracking-wider text-text-muted/70 truncate max-w-[48px]">
+                      {cell.cycleInfo.phaseName}
+                    </span>
                   </div>
-                ) : cell.isCurrentMonth ? (
-                  <span className="text-[10px] text-text-muted/60 pl-0.5">
-                    Día {cell.cycleInfo.cycleDay}
-                  </span>
-                ) : null}
-              </div>
+
+                  {cell.totalCalories > 0 && (
+                    <div className="flex items-center justify-between text-[10px] font-bold text-text-main bg-surface/90 border border-border/50 px-1 py-0.5 rounded shadow-2xs">
+                      <span className="truncate">{cell.totalCalories} kcal</span>
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ml-0.5 ${
+                          cell.isCalorieGoalMet ? "bg-primary" : "bg-accent"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
             </button>
           );
         })}

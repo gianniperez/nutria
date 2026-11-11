@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { format } from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useAuth } from "@/providers/AuthProvider";
 import { useProfile } from "@/features/profile";
@@ -44,7 +44,7 @@ export function createEmptyDailyLog(date: string, userId = "current_user"): Dail
 
 export function useDiary(initialDate?: string) {
   const { userId } = useAuth();
-  const { profile, macros } = useProfile();
+  const { profile, macros, updateProfile } = useProfile();
 
   const todayStr = useMemo(() => format(new Date(), "yyyy-MM-dd"), []);
   const [selectedDate, setSelectedDate] = useState<string>(initialDate || todayStr);
@@ -74,6 +74,11 @@ export function useDiary(initialDate?: string) {
       profile?.periodDurationDays || 5
     );
   }, [selectedDate, profile]);
+
+  // Ajuste calórico efectivo en fase lútea (0 si la fecha actual no está en fase lútea)
+  const effectiveLutealAdjustmentKcal = cycleInfo.isLutealAlertActive
+    ? lutealAdjustmentKcal
+    : 0;
 
   // Resumen nutricional consolidado
   const summary: DailyNutritionalSummary = useMemo(() => {
@@ -107,14 +112,15 @@ export function useDiary(initialDate?: string) {
       0
     );
 
-    const targetCalories = (macros?.targetCalories || 1800) + lutealAdjustmentKcal;
+    const targetCalories =
+      (macros?.targetCalories || 1800) + effectiveLutealAdjustmentKcal;
     const remainingCalories = targetCalories - ingestedCalories + burnedCalories;
 
     return {
       targetCalories,
       ingestedCalories: Math.round(ingestedCalories),
       burnedCalories: Math.round(burnedCalories),
-      lutealAdjustmentKcal,
+      lutealAdjustmentKcal: effectiveLutealAdjustmentKcal,
       remainingCalories: Math.round(remainingCalories),
       ingestedProteinG: Math.round(ingestedProteinG),
       targetProteinG: macros?.proteinGrams || 120,
@@ -123,7 +129,7 @@ export function useDiary(initialDate?: string) {
       ingestedFatG: Math.round(ingestedFatG),
       targetFatG: macros?.fatGrams || 50,
     };
-  }, [dailyLog, macros, lutealAdjustmentKcal]);
+  }, [dailyLog, macros, effectiveLutealAdjustmentKcal]);
 
   // Guardar cambios en el log del día
   const persistLog = useCallback(
@@ -277,8 +283,21 @@ export function useDiary(initialDate?: string) {
       const prevQty = itemToUpdate.quantityGrams || 1;
       const factor = newQuantity / prevQty;
 
+      let updatedName = itemToUpdate.name;
+      if (itemToUpdate.recipeId) {
+        const baseName = itemToUpdate.name.replace(
+          /^\d+(\.\d+)?\s+porci(ón|ones)\s+de\s+/i,
+          ""
+        );
+        updatedName =
+          newQuantity === 1
+            ? `1 porción de ${baseName}`
+            : `${newQuantity} porciones de ${baseName}`;
+      }
+
       const updatedItem: LoggedFoodItem = {
         ...itemToUpdate,
+        name: updatedName,
         quantityGrams: newQuantity,
         calories: Math.round(itemToUpdate.calories * factor),
         proteinG: Number((itemToUpdate.proteinG * factor).toFixed(1)),
@@ -424,10 +443,45 @@ export function useDiary(initialDate?: string) {
     });
   }, [dailyLog, persistLog]);
 
-  const togglePeriod = useCallback(async () => {
+  const startNewCycle = useCallback(async () => {
+    const periodDays = profile?.periodDurationDays || 5;
+    const baseDate = parseISO(selectedDate);
+
+    // 1. Guardar log para la fecha seleccionada como inicio de ciclo
     await persistLog({
       ...dailyLog,
-      isPeriodActive: !dailyLog.isPeriodActive,
+      isPeriodActive: true,
+      isPeriodStart: true,
+      isPeriodEnd: periodDays === 1,
+    });
+
+    // 2. Establecer días siguientes de sangrado según la duración estimada
+    for (let i = 1; i < periodDays; i++) {
+      const dStr = format(addDays(baseDate, i), "yyyy-MM-dd");
+      const existing =
+        (await diaryApi.getDailyLog(dStr)) ||
+        createEmptyDailyLog(dStr, userId || "current_user");
+
+      await diaryApi.saveDailyLog({
+        ...existing,
+        isPeriodActive: true,
+        isPeriodStart: false,
+        isPeriodEnd: i === periodDays - 1,
+        updatedAt: Date.now(),
+      });
+    }
+
+    // 3. Actualizar la fecha del último período en el perfil para recalcular el ciclo
+    await updateProfile({ lastPeriodDate: selectedDate });
+  }, [profile, selectedDate, dailyLog, persistLog, userId, updateProfile]);
+
+  const togglePeriod = useCallback(async () => {
+    const nextIsActive = !dailyLog.isPeriodActive;
+    await persistLog({
+      ...dailyLog,
+      isPeriodActive: nextIsActive,
+      isPeriodStart: nextIsActive ? dailyLog.isPeriodStart : false,
+      isPeriodEnd: !nextIsActive,
     });
   }, [dailyLog, persistLog]);
 
@@ -456,7 +510,8 @@ export function useDiary(initialDate?: string) {
     setMood,
     toggleLoveNote,
     togglePeriod,
+    startNewCycle,
     applyLutealAdjustment,
-    lutealAdjustmentKcal,
+    lutealAdjustmentKcal: effectiveLutealAdjustmentKcal,
   };
 }

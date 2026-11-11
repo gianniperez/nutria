@@ -10,9 +10,11 @@ interface MoodWellnessCardProps {
   moodNote?: string;
   hasLoveNote?: boolean;
   isPeriodActive?: boolean;
+  isPeriodStart?: boolean;
   onSetMood: (score: 1 | 2 | 3 | 4 | 5, note?: string) => Promise<void>;
   onToggleLoveNote: () => Promise<void>;
   onTogglePeriod: () => Promise<void>;
+  onStartNewCycle?: () => Promise<void>;
 }
 
 export function MoodWellnessCard({
@@ -20,9 +22,11 @@ export function MoodWellnessCard({
   moodNote = "",
   hasLoveNote = false,
   isPeriodActive = false,
+  isPeriodStart = false,
   onSetMood,
   onToggleLoveNote,
   onTogglePeriod,
+  onStartNewCycle,
 }: MoodWellnessCardProps) {
   const moods: {
     score: 1 | 2 | 3 | 4 | 5;
@@ -106,7 +110,7 @@ export function MoodWellnessCard({
           />
         </div>
 
-        <div className="p-2.5 bg-menstrual-light/30 border border-menstrual/30 rounded-card">
+        <div className="p-2.5 bg-menstrual-light/30 border border-menstrual/30 rounded-card flex flex-col justify-between">
           <ToggleSwitch
             checked={isPeriodActive}
             onChange={() => onTogglePeriod()}
@@ -119,6 +123,27 @@ export function MoodWellnessCard({
             }
             description="Día de sangrado menstrual 🩸"
           />
+
+          {isPeriodStart ? (
+            <div className="mt-2.5 pt-2 border-t border-menstrual/20 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-menstrual-dark flex items-center gap-1">
+                <Drop weight="fill" className="w-3.5 h-3.5 text-menstrual" />
+                Inicio de ciclo (Día 1)
+              </span>
+              <span className="text-[10px] text-text-muted">Ciclo activo</span>
+            </div>
+          ) : (
+            onStartNewCycle && (
+              <button
+                type="button"
+                onClick={() => onStartNewCycle()}
+                className="w-full mt-2.5 py-1.5 px-3 rounded-button text-xs font-semibold flex items-center justify-center gap-1.5 transition-all bg-menstrual-light/80 hover:bg-menstrual-light text-menstrual-dark border border-menstrual/40 cursor-pointer active:scale-95"
+              >
+                <Drop weight="bold" className="w-3.5 h-3.5 text-menstrual" />
+                Iniciar nuevo ciclo aquí (Día 1)
+              </button>
+            )
+          )}
         </div>
       </div>
     </Card>

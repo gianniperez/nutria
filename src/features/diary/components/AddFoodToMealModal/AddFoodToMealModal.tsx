@@ -5,16 +5,16 @@ import {
   BowlFood,
   CookingPot,
   Plus,
+  Minus,
   Star,
   Check,
-  PencilSimple,
-  X,
+  Trash,
 } from "@phosphor-icons/react";
 import { Modal } from "@/components/Modal";
 import { SearchInput } from "@/components/SearchInput";
 import { SegmentedControl } from "@/components/SegmentedControl";
-import { NumberInput } from "@/components/NumberInput";
 import { Button } from "@/components/Button";
+import { IconButton } from "@/components/IconButton";
 import { useFoods } from "@/features/foods";
 import { useRecipes } from "@/features/recipes";
 import type { MealType, Ingredient, Recipe } from "@/types/database";
@@ -52,17 +52,7 @@ export function AddFoodToMealModal({
 }: AddFoodToMealModalProps) {
   const [activeTab, setActiveTab] = useState<"foods" | "recipes">("foods");
   const [search, setSearch] = useState("");
-
-  // Lista de items preparados para agregar en lote
   const [stagedItems, setStagedItems] = useState<StagedMealItem[]>([]);
-
-  // Item activo siendo configurado
-  const [activeFood, setActiveFood] = useState<Ingredient | null>(null);
-  const [foodGrams, setFoodGrams] = useState(100);
-
-  const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
-  const [recipeServings, setRecipeServings] = useState(1);
-
   const [isLogging, setIsLogging] = useState(false);
 
   const { foods } = useFoods();
@@ -95,151 +85,126 @@ export function AddFoodToMealModal({
     0,
   );
 
-  const handleSelectFood = (food: Ingredient) => {
-    setActiveRecipe(null);
-    setActiveFood(food);
-    const existing = stagedItems.find((item) => item.food?.id === food.id);
-    setFoodGrams(existing ? existing.quantity : food.portionGrams || 100);
+  // 1-Tap para agregar o incrementar alimento
+  const handleToggleOrAddFood = (food: Ingredient) => {
+    const existingIndex = stagedItems.findIndex(
+      (item) => item.food?.id === food.id,
+    );
+
+    if (existingIndex >= 0) {
+      const existing = stagedItems[existingIndex];
+      const step =
+        food.portionUnit === "unit" ? 1 : food.portionGrams || 50;
+      handleUpdateQuantity(existing.tempId, existing.quantity + step);
+    } else {
+      const defaultQty =
+        food.portionUnit === "unit" ? 1 : food.portionGrams || 100;
+      const basePortion = food.portionGrams || 100;
+      const factor = defaultQty / basePortion;
+
+      const newItem: StagedMealItem = {
+        tempId: `staged-food-${food.id}-${Date.now()}`,
+        type: "food",
+        food,
+        name: food.name,
+        quantity: defaultQty,
+        unit: food.portionUnit,
+        calories: Math.round(food.calories * factor),
+        proteinG: Number((food.proteinG * factor).toFixed(1)),
+        carbsG: Number((food.carbsG * factor).toFixed(1)),
+        fatG: Number((food.fatG * factor).toFixed(1)),
+      };
+
+      setStagedItems((prev) => [...prev, newItem]);
+    }
   };
 
-  const handleSelectRecipe = (recipe: Recipe) => {
-    setActiveFood(null);
-    setActiveRecipe(recipe);
-    const existing = stagedItems.find((item) => item.recipe?.id === recipe.id);
-    setRecipeServings(existing ? existing.quantity : 1);
+  // 1-Tap para agregar o incrementar receta
+  const handleToggleOrAddRecipe = (recipe: Recipe) => {
+    const existingIndex = stagedItems.findIndex(
+      (item) => item.recipe?.id === recipe.id,
+    );
+
+    if (existingIndex >= 0) {
+      const existing = stagedItems[existingIndex];
+      handleUpdateQuantity(existing.tempId, existing.quantity + 1);
+    } else {
+      const newItem: StagedMealItem = {
+        tempId: `staged-recipe-${recipe.id}-${Date.now()}`,
+        type: "recipe",
+        recipe,
+        name: `1 porción de ${recipe.name}`,
+        quantity: 1,
+        unit: "porción",
+        calories: Math.round(recipe.caloriesPerServing),
+        proteinG: Number(recipe.proteinPerServing.toFixed(1)),
+        carbsG: Number(recipe.carbsPerServing.toFixed(1)),
+        fatG: Number(recipe.fatPerServing.toFixed(1)),
+      };
+
+      setStagedItems((prev) => [...prev, newItem]);
+    }
   };
 
-  const handleAddOrUpdateFoodStaged = () => {
-    if (!activeFood) return;
-    const basePortion = activeFood.portionGrams || 100;
-    const factor = foodGrams / basePortion;
+  // Modificar cantidad en línea en la bandeja
+  const handleUpdateQuantity = (tempId: string, newQty: number) => {
+    if (newQty <= 0) {
+      handleRemoveStagedItem(tempId);
+      return;
+    }
 
-    const stagedItem: StagedMealItem = {
-      tempId: `staged-food-${activeFood.id}`,
-      type: "food",
-      food: activeFood,
-      name: activeFood.name,
-      quantity: foodGrams,
-      unit: activeFood.portionUnit,
-      calories: Math.round(activeFood.calories * factor),
-      proteinG: Number((activeFood.proteinG * factor).toFixed(1)),
-      carbsG: Number((activeFood.carbsG * factor).toFixed(1)),
-      fatG: Number((activeFood.fatG * factor).toFixed(1)),
-    };
+    setStagedItems((prev) =>
+      prev.map((item) => {
+        if (item.tempId !== tempId) return item;
 
-    setStagedItems((prev) => {
-      const idx = prev.findIndex((item) => item.food?.id === activeFood.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = stagedItem;
-        return next;
-      }
-      return [...prev, stagedItem];
-    });
+        if (item.type === "food" && item.food) {
+          const basePortion = item.food.portionGrams || 100;
+          const factor = newQty / basePortion;
+          return {
+            ...item,
+            quantity: newQty,
+            calories: Math.round(item.food.calories * factor),
+            proteinG: Number((item.food.proteinG * factor).toFixed(1)),
+            carbsG: Number((item.food.carbsG * factor).toFixed(1)),
+            fatG: Number((item.food.fatG * factor).toFixed(1)),
+          };
+        }
 
-    setActiveFood(null);
-  };
+        if (item.type === "recipe" && item.recipe) {
+          return {
+            ...item,
+            name:
+              newQty === 1
+                ? `1 porción de ${item.recipe.name}`
+                : `${newQty} porciones de ${item.recipe.name}`,
+            quantity: newQty,
+            unit: newQty === 1 ? "porción" : "porciones",
+            calories: Math.round(item.recipe.caloriesPerServing * newQty),
+            proteinG: Number((item.recipe.proteinPerServing * newQty).toFixed(1)),
+            carbsG: Number((item.recipe.carbsPerServing * newQty).toFixed(1)),
+            fatG: Number((item.recipe.fatPerServing * newQty).toFixed(1)),
+          };
+        }
 
-  const handleAddOrUpdateRecipeStaged = () => {
-    if (!activeRecipe) return;
-    const servingLabel =
-      recipeServings === 1
-        ? `1 porción de ${activeRecipe.name}`
-        : `${recipeServings} porciones de ${activeRecipe.name}`;
-
-    const stagedItem: StagedMealItem = {
-      tempId: `staged-recipe-${activeRecipe.id}`,
-      type: "recipe",
-      recipe: activeRecipe,
-      name: servingLabel,
-      quantity: recipeServings,
-      unit: recipeServings === 1 ? "porción" : "porciones",
-      calories: Math.round(activeRecipe.caloriesPerServing * recipeServings),
-      proteinG: Number(
-        (activeRecipe.proteinPerServing * recipeServings).toFixed(1),
-      ),
-      carbsG: Number(
-        (activeRecipe.carbsPerServing * recipeServings).toFixed(1),
-      ),
-      fatG: Number((activeRecipe.fatPerServing * recipeServings).toFixed(1)),
-    };
-
-    setStagedItems((prev) => {
-      const idx = prev.findIndex((item) => item.recipe?.id === activeRecipe.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = stagedItem;
-        return next;
-      }
-      return [...prev, stagedItem];
-    });
-
-    setActiveRecipe(null);
+        return item;
+      }),
+    );
   };
 
   const handleRemoveStagedItem = (tempId: string) => {
     setStagedItems((prev) => prev.filter((item) => item.tempId !== tempId));
   };
 
+  // Confirmar y registrar todo el lote
   const handleConfirmBatchLog = async () => {
-    const finalItems = [...stagedItems];
-
-    if (activeFood) {
-      const basePortion = activeFood.portionGrams || 100;
-      const factor = foodGrams / basePortion;
-      const staged: StagedMealItem = {
-        tempId: `staged-food-${activeFood.id}`,
-        type: "food",
-        food: activeFood,
-        name: activeFood.name,
-        quantity: foodGrams,
-        unit: activeFood.portionUnit,
-        calories: Math.round(activeFood.calories * factor),
-        proteinG: Number((activeFood.proteinG * factor).toFixed(1)),
-        carbsG: Number((activeFood.carbsG * factor).toFixed(1)),
-        fatG: Number((activeFood.fatG * factor).toFixed(1)),
-      };
-      const idx = finalItems.findIndex(
-        (item) => item.food?.id === activeFood.id,
-      );
-      if (idx >= 0) finalItems[idx] = staged;
-      else finalItems.push(staged);
-    } else if (activeRecipe) {
-      const servingLabel =
-        recipeServings === 1
-          ? `1 porción de ${activeRecipe.name}`
-          : `${recipeServings} porciones de ${activeRecipe.name}`;
-      const staged: StagedMealItem = {
-        tempId: `staged-recipe-${activeRecipe.id}`,
-        type: "recipe",
-        recipe: activeRecipe,
-        name: servingLabel,
-        quantity: recipeServings,
-        unit: recipeServings === 1 ? "porción" : "porciones",
-        calories: Math.round(activeRecipe.caloriesPerServing * recipeServings),
-        proteinG: Number(
-          (activeRecipe.proteinPerServing * recipeServings).toFixed(1),
-        ),
-        carbsG: Number(
-          (activeRecipe.carbsPerServing * recipeServings).toFixed(1),
-        ),
-        fatG: Number((activeRecipe.fatPerServing * recipeServings).toFixed(1)),
-      };
-      const idx = finalItems.findIndex(
-        (item) => item.recipe?.id === activeRecipe.id,
-      );
-      if (idx >= 0) finalItems[idx] = staged;
-      else finalItems.push(staged);
-    }
-
-    if (finalItems.length === 0) return;
+    if (stagedItems.length === 0) return;
 
     setIsLogging(true);
     try {
       if (onLogMultiple) {
-        await onLogMultiple(mealType, finalItems);
+        await onLogMultiple(mealType, stagedItems);
       } else {
-        for (const item of finalItems) {
+        for (const item of stagedItems) {
           if (item.type === "food" && item.food && onLogFood) {
             await onLogFood(mealType, item.food, item.quantity);
           } else if (item.type === "recipe" && item.recipe && onLogRecipe) {
@@ -248,8 +213,6 @@ export function AddFoodToMealModal({
         }
       }
       setStagedItems([]);
-      setActiveFood(null);
-      setActiveRecipe(null);
       onClose();
     } finally {
       setIsLogging(false);
@@ -258,48 +221,15 @@ export function AddFoodToMealModal({
 
   const handleModalClose = () => {
     setStagedItems([]);
-    setActiveFood(null);
-    setActiveRecipe(null);
     onClose();
   };
-
-  const currentFoodCalculatedCalories = activeFood
-    ? Math.round(
-        (activeFood.calories * foodGrams) / (activeFood.portionGrams || 100),
-      )
-    : 0;
-
-  const currentRecipeCalculatedCalories = activeRecipe
-    ? Math.round(activeRecipe.caloriesPerServing * recipeServings)
-    : 0;
-
-  const hasItemsToLog =
-    stagedItems.length > 0 || Boolean(activeFood) || Boolean(activeRecipe);
-
-  const totalCalculatedCalories =
-    totalStagedCalories +
-    (activeFood && !stagedItems.some((i) => i.food?.id === activeFood.id)
-      ? currentFoodCalculatedCalories
-      : 0) +
-    (activeRecipe && !stagedItems.some((i) => i.recipe?.id === activeRecipe.id)
-      ? currentRecipeCalculatedCalories
-      : 0);
-
-  const totalCount =
-    stagedItems.length +
-    (activeFood && !stagedItems.some((i) => i.food?.id === activeFood.id)
-      ? 1
-      : 0) +
-    (activeRecipe && !stagedItems.some((i) => i.recipe?.id === activeRecipe.id)
-      ? 1
-      : 0);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleModalClose}
       title={`Agregar a ${mealTitle}`}
-      description="Selecciona alimentos o porciones de tus recetas. Puedes elegir varios antes de guardar."
+      description="Presiona sobre cualquier alimento para sumarlo directamente a tu comida."
       maxWidth="md"
       footer={
         <div className="flex items-center justify-between gap-2 w-full">
@@ -310,202 +240,94 @@ export function AddFoodToMealModal({
           <Button
             variant="primary"
             size="sm"
-            disabled={!hasItemsToLog}
+            disabled={stagedItems.length === 0}
             isLoading={isLogging}
             onClick={handleConfirmBatchLog}
           >
-            {totalCount > 0
-              ? `Agregar seleccionados (${totalCount}) — ${totalCalculatedCalories} kcal`
+            {stagedItems.length > 0
+              ? `Agregar seleccionados (${stagedItems.length}) — ${totalStagedCalories} kcal`
               : "Selecciona alimentos"}
           </Button>
         </div>
       }
     >
-      <div className="flex flex-col gap-4">
-        {/* Bandeja de Alimentos Seleccionados (Staged Items) */}
+      <div className="flex flex-col gap-3.5">
+        {/* Bandeja de Alimentos Preparados (Staged Items) */}
         {stagedItems.length > 0 && (
-          <div className="p-3 bg-surface-hover/70 border border-primary/30 rounded-card flex flex-col gap-2">
+          <div className="p-3 bg-surface-hover/80 border border-primary/30 rounded-card flex flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-xs text-text-main flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-primary inline-block"></span>
-                Alimentos seleccionados ({stagedItems.length})
+                <span className="w-2 h-2 rounded-full bg-primary inline-block animate-pulse"></span>
+                Alimentos a registrar ({stagedItems.length})
               </span>
-              <span className="text-xs font-semibold text-primary-text">
+              <span className="text-xs font-bold text-primary-text">
                 {totalStagedCalories} kcal{" "}
                 {totalStagedProtein > 0
-                  ? `(${Math.round(totalStagedProtein)}g prot)`
+                  ? `· ${Math.round(totalStagedProtein)}g prot`
                   : ""}
               </span>
             </div>
 
-            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
-              {stagedItems.map((item) => (
-                <div
-                  key={item.tempId}
-                  className="flex items-center gap-1.5 px-2.5 py-1 bg-surface border border-border/80 rounded-button text-xs shadow-2xs"
-                >
-                  <span className="font-semibold text-text-main max-w-[130px] truncate">
-                    {item.name}
-                  </span>
-                  <span className="text-text-muted">
-                    {item.quantity}
-                    {item.unit} ({item.calories} kcal)
-                  </span>
+            <div className="flex flex-col gap-1.5 max-h-44 overflow-y-auto pr-1">
+              {stagedItems.map((item) => {
+                const step =
+                  item.type === "recipe" || item.unit === "unit"
+                    ? 1
+                    : (item.food?.portionGrams && item.food.portionGrams < 50
+                        ? item.food.portionGrams
+                        : 25);
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (item.type === "food" && item.food)
-                        handleSelectFood(item.food);
-                      if (item.type === "recipe" && item.recipe)
-                        handleSelectRecipe(item.recipe);
-                    }}
-                    className="p-0.5 text-text-muted hover:text-primary transition-colors cursor-pointer"
-                    title="Modificar porción"
+                return (
+                  <div
+                    key={item.tempId}
+                    className="flex items-center justify-between p-2 bg-surface border border-border/80 rounded-button text-xs shadow-2xs gap-2"
                   >
-                    <PencilSimple weight="bold" className="w-3 h-3" />
-                  </button>
+                    <div className="flex flex-col min-w-0 flex-1">
+                      <span className="font-semibold text-text-main truncate">
+                        {item.name}
+                      </span>
+                      <span className="text-[11px] text-text-muted">
+                        {item.calories} kcal · {item.proteinG}g P · {item.carbsG}g C · {item.fatG}g G
+                      </span>
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveStagedItem(item.tempId)}
-                    className="p-0.5 text-text-muted hover:text-menstrual transition-colors cursor-pointer"
-                    title="Quitar de la lista"
-                  >
-                    <X weight="bold" className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+                    {/* Controles de Cantidad en Línea */}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center border border-border rounded-button bg-surface-hover">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantity(item.tempId, item.quantity - step)}
+                          className="px-2 py-1 text-text-muted hover:text-text-main hover:bg-surface rounded-l-button transition-colors cursor-pointer"
+                          title="Restar cantidad"
+                        >
+                          <Minus weight="bold" className="w-3 h-3" />
+                        </button>
 
-        {/* Panel de Configuración de Porción Activa */}
-        {activeFood && (
-          <div className="p-3.5 bg-primary-light/30 border border-primary/50 rounded-card flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-semibold text-xs text-primary-text">
-                  Ajustar cantidad: <strong>{activeFood.name}</strong>
-                </span>
-                <span className="text-[11px] text-text-muted">
-                  {currentFoodCalculatedCalories} kcal (P:{" "}
-                  {Number(
-                    (
-                      (activeFood.proteinG * foodGrams) /
-                      (activeFood.portionGrams || 100)
-                    ).toFixed(1),
-                  )}
-                  g | C:{" "}
-                  {Number(
-                    (
-                      (activeFood.carbsG * foodGrams) /
-                      (activeFood.portionGrams || 100)
-                    ).toFixed(1),
-                  )}
-                  g | G:{" "}
-                  {Number(
-                    (
-                      (activeFood.fatG * foodGrams) /
-                      (activeFood.portionGrams || 100)
-                    ).toFixed(1),
-                  )}
-                  g)
-                </span>
-              </div>
+                        <span className="px-2 text-xs font-bold text-text-main min-w-[50px] text-center select-none">
+                          {item.quantity} {item.unit}
+                        </span>
 
-              <button
-                type="button"
-                onClick={() => setActiveFood(null)}
-                className="text-[11px] text-text-muted hover:text-text-main underline cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateQuantity(item.tempId, item.quantity + step)}
+                          className="px-2 py-1 text-text-muted hover:text-text-main hover:bg-surface rounded-r-button transition-colors cursor-pointer"
+                          title="Sumar cantidad"
+                        >
+                          <Plus weight="bold" className="w-3 h-3" />
+                        </button>
+                      </div>
 
-            <NumberInput
-              label={`Gramos / ${activeFood.portionUnit}`}
-              value={foodGrams}
-              onChange={setFoodGrams}
-              min={1}
-              max={2500}
-              step={10}
-              unit={activeFood.portionUnit}
-            />
-
-            <div className="flex justify-end gap-2 pt-1">
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                leftIcon={<Plus weight="bold" className="w-3 h-3" />}
-                onClick={handleAddOrUpdateFoodStaged}
-              >
-                {stagedItems.some((i) => i.food?.id === activeFood.id)
-                  ? "Actualizar en la lista"
-                  : `Sumar a la selección (+${currentFoodCalculatedCalories} kcal)`}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {activeRecipe && (
-          <div className="p-3.5 bg-secondary-light/30 border border-secondary/50 rounded-card flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <span className="font-semibold text-xs text-secondary-text">
-                  Ajustar porciones: <strong>{activeRecipe.name}</strong>
-                </span>
-                <span className="text-[11px] text-text-muted">
-                  {currentRecipeCalculatedCalories} kcal (P:{" "}
-                  {Number(
-                    (activeRecipe.proteinPerServing * recipeServings).toFixed(
-                      1,
-                    ),
-                  )}
-                  g | C:{" "}
-                  {Number(
-                    (activeRecipe.carbsPerServing * recipeServings).toFixed(1),
-                  )}
-                  g | G:{" "}
-                  {Number(
-                    (activeRecipe.fatPerServing * recipeServings).toFixed(1),
-                  )}
-                  g)
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setActiveRecipe(null)}
-                className="text-[11px] text-text-muted hover:text-text-main underline cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
-
-            <NumberInput
-              label="Porciones a consumir"
-              value={recipeServings}
-              onChange={setRecipeServings}
-              min={0.5}
-              max={10}
-              step={0.5}
-              unit="porc."
-            />
-
-            <div className="flex justify-end gap-2 pt-1">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                leftIcon={<Plus weight="bold" className="w-3 h-3" />}
-                onClick={handleAddOrUpdateRecipeStaged}
-              >
-                {stagedItems.some((i) => i.recipe?.id === activeRecipe.id)
-                  ? "Actualizar en la lista"
-                  : `Sumar a la selección (+${currentRecipeCalculatedCalories} kcal)`}
-              </Button>
+                      <IconButton
+                        icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-menstrual" />}
+                        aria-label="Quitar de la lista"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveStagedItem(item.tempId)}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
@@ -526,9 +348,7 @@ export function AddFoodToMealModal({
             },
           ]}
           value={activeTab}
-          onChange={(val) => {
-            setActiveTab(val);
-          }}
+          onChange={(val) => setActiveTab(val)}
         />
 
         {/* Barra de Búsqueda */}
@@ -542,33 +362,30 @@ export function AddFoodToMealModal({
           }
         />
 
-        {/* Lista de Resultados */}
-        <div className="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1">
+        {/* Lista de Resultados con 1-Tap Add */}
+        <div className="flex flex-col gap-2 max-h-64 overflow-y-auto pr-1">
           {activeTab === "foods" ? (
             filteredFoods.length > 0 ? (
               filteredFoods.map((food) => {
                 const stagedItem = stagedItems.find(
                   (item) => item.food?.id === food.id,
                 );
-                const isConfiguring = activeFood?.id === food.id;
 
                 return (
                   <div
                     key={food.id}
-                    onClick={() => handleSelectFood(food)}
+                    onClick={() => handleToggleOrAddFood(food)}
                     className={`flex items-center justify-between p-2.5 rounded-card border transition-all cursor-pointer select-none ${
-                      isConfiguring
-                        ? "bg-primary-light/40 border-primary ring-1 ring-primary shadow-2xs"
-                        : stagedItem
-                          ? "bg-surface-hover/80 border-primary/40"
-                          : "bg-surface border-border hover:bg-surface-hover"
+                      stagedItem
+                        ? "bg-primary-light/40 border-primary ring-1 ring-primary/40 shadow-2xs"
+                        : "bg-surface border-border hover:bg-surface-hover"
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       {food.isFavorite && (
                         <Star
                           weight="fill"
-                          className="w-3.5 h-3.5 text-[#F4A261] shrink-0"
+                          className="w-3.5 h-3.5 text-accent shrink-0"
                         />
                       )}
                       <div className="flex flex-col min-w-0">
@@ -578,21 +395,14 @@ export function AddFoodToMealModal({
                         <span className="text-[11px] text-text-muted">
                           {food.portionGrams}
                           {food.portionUnit} — {food.calories} kcal (P:{" "}
-                          {food.proteinG}g | C: {food.carbsG}g | G: {food.fatG}
-                          g)
+                          {food.proteinG}g | C: {food.carbsG}g | G: {food.fatG}g)
                         </span>
                       </div>
                     </div>
 
                     <Button
                       type="button"
-                      variant={
-                        stagedItem
-                          ? "primary"
-                          : isConfiguring
-                            ? "primary"
-                            : "outline"
-                      }
+                      variant={stagedItem ? "primary" : "outline"}
                       size="sm"
                       leftIcon={
                         stagedItem ? (
@@ -601,12 +411,12 @@ export function AddFoodToMealModal({
                           <Plus weight="bold" className="w-3 h-3" />
                         )
                       }
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleOrAddFood(food);
+                      }}
                     >
-                      {stagedItem
-                        ? `${stagedItem.quantity}${stagedItem.unit}`
-                        : isConfiguring
-                          ? "Ajustando"
-                          : "Elegir"}
+                      {stagedItem ? `${stagedItem.quantity} ${stagedItem.unit}` : "Elegir"}
                     </Button>
                   </div>
                 );
@@ -621,18 +431,15 @@ export function AddFoodToMealModal({
               const stagedItem = stagedItems.find(
                 (item) => item.recipe?.id === recipe.id,
               );
-              const isConfiguring = activeRecipe?.id === recipe.id;
 
               return (
                 <div
                   key={recipe.id}
-                  onClick={() => handleSelectRecipe(recipe)}
+                  onClick={() => handleToggleOrAddRecipe(recipe)}
                   className={`flex items-center justify-between p-2.5 rounded-card border transition-all cursor-pointer select-none ${
-                    isConfiguring
-                      ? "bg-secondary-light/40 border-secondary ring-1 ring-secondary shadow-2xs"
-                      : stagedItem
-                        ? "bg-surface-hover/80 border-secondary/40"
-                        : "bg-surface border-border hover:bg-surface-hover"
+                    stagedItem
+                      ? "bg-primary-light/40 border-primary ring-1 ring-primary/40 shadow-2xs"
+                      : "bg-surface border-border hover:bg-surface-hover"
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -645,7 +452,7 @@ export function AddFoodToMealModal({
                         {recipe.name}
                       </span>
                       <span className="text-[11px] text-text-muted">
-                        Por porción: {recipe.caloriesPerServing} kcal (P:{" "}
+                        Porción: {recipe.caloriesPerServing} kcal (P:{" "}
                         {recipe.proteinPerServing}g | C:{" "}
                         {recipe.carbsPerServing}g | G: {recipe.fatPerServing}g)
                       </span>
@@ -654,13 +461,7 @@ export function AddFoodToMealModal({
 
                   <Button
                     type="button"
-                    variant={
-                      stagedItem
-                        ? "secondary"
-                        : isConfiguring
-                          ? "secondary"
-                          : "outline"
-                    }
+                    variant={stagedItem ? "primary" : "outline"}
                     size="sm"
                     leftIcon={
                       stagedItem ? (
@@ -669,12 +470,14 @@ export function AddFoodToMealModal({
                         <Plus weight="bold" className="w-3 h-3" />
                       )
                     }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleOrAddRecipe(recipe);
+                    }}
                   >
                     {stagedItem
                       ? `${stagedItem.quantity} ${stagedItem.quantity === 1 ? "porc." : "porcs."}`
-                      : isConfiguring
-                        ? "Ajustando"
-                        : "Elegir"}
+                      : "Elegir"}
                   </Button>
                 </div>
               );

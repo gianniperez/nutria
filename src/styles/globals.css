@@ -5,6 +5,7 @@
   --font-sans: var(--font-poppins), "Poppins", sans-serif;
 
   --color-bg: var(--color-bg);
+  --color-background: var(--color-bg);
   --color-surface: var(--color-surface);
   --color-surface-hover: var(--color-surface-hover);
   --color-border: var(--color-border);
@@ -28,6 +29,18 @@
   --color-menstrual-light: var(--color-menstrual-light);
   --color-menstrual: var(--color-menstrual);
   --color-menstrual-dark: var(--color-menstrual-dark);
+
+  --color-follicular-light: var(--color-follicular-light);
+  --color-follicular: var(--color-follicular);
+  --color-follicular-dark: var(--color-follicular-dark);
+
+  --color-ovulation-light: var(--color-ovulation-light);
+  --color-ovulation: var(--color-ovulation);
+  --color-ovulation-dark: var(--color-ovulation-dark);
+
+  --color-luteal-light: var(--color-luteal-light);
+  --color-luteal: var(--color-luteal);
+  --color-luteal-dark: var(--color-luteal-dark);
 
   --color-love-light: var(--color-love-light);
   --color-love: var(--color-love);
@@ -72,10 +85,22 @@
   --color-accent: #E07A5F;
   --color-accent-dark: #B85338;
 
-  /* Menstrual (Coral Red) */
+  /* Fases Hormonales */
   --color-menstrual-light: #FFE2E3;
   --color-menstrual: #E76F74;
   --color-menstrual-dark: #C2484E;
+
+  --color-follicular-light: #E2F4EC;
+  --color-follicular: #A3DECE;
+  --color-follicular-dark: #2C7A63;
+
+  --color-ovulation-light: #FEF9E7;
+  --color-ovulation: #F9E79F;
+  --color-ovulation-dark: #8D6F08;
+
+  --color-luteal-light: #F3E8F7;
+  --color-luteal: #D8B4E2;
+  --color-luteal-dark: #683B7E;
 
   /* Love / Intimacy (Rose) */
   --color-love-light: #FCD6E5;
@@ -117,10 +142,22 @@
   --color-accent: #D84A75;
   --color-accent-dark: #A62950;
 
-  /* Menstrual */
+  /* Fases Hormonales */
   --color-menstrual-light: #FDE8EF;
   --color-menstrual: #D84A75;
   --color-menstrual-dark: #A62950;
+
+  --color-follicular-light: #E0F4F7;
+  --color-follicular: #98D8E4;
+  --color-follicular-dark: #1D6470;
+
+  --color-ovulation-light: #FFF5E6;
+  --color-ovulation: #FFD7A3;
+  --color-ovulation-dark: #8F5417;
+
+  --color-luteal-light: #F5E8FF;
+  --color-luteal: #D3A8FF;
+  --color-luteal-dark: #582490;
 
   /* Love */
   --color-love-light: #FFA6C9;
@@ -162,10 +199,22 @@
   --color-accent: #E76F51;
   --color-accent-dark: #BF472A;
 
-  /* Menstrual */
+  /* Fases Hormonales */
   --color-menstrual-light: #FCE8E9;
   --color-menstrual: #E63946;
   --color-menstrual-dark: #B51B27;
+
+  --color-follicular-light: #E4F2E7;
+  --color-follicular: #9ED4AB;
+  --color-follicular-dark: #266336;
+
+  --color-ovulation-light: #FEF6E4;
+  --color-ovulation: #F5D68B;
+  --color-ovulation-dark: #7E5B10;
+
+  --color-luteal-light: #F2EAE4;
+  --color-luteal: #C8AFA0;
+  --color-luteal-dark: #5C3D29;
 
   /* Love */
   --color-love-light: #F8C39B;

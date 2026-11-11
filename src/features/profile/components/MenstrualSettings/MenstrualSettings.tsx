@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import { Drop, Sparkle, Calendar } from "@phosphor-icons/react";
 import { Card } from "@/components/Card";
 import { Input } from "@/components/Input";
@@ -25,7 +26,7 @@ export function MenstrualSettings({
   const safeLastPeriodDate = lastPeriodDate || "2026-08-01";
   const ovulationDay = safeCycle - 14;
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  const todayStr = format(new Date(), "yyyy-MM-dd");
   const todayCycleInfo = getCyclePhaseInfo(
     todayStr,
     safeLastPeriodDate,
@@ -98,22 +99,22 @@ export function MenstrualSettings({
             <span className="text-text-muted text-[11px]">Días 1 a {safePeriod}</span>
           </div>
 
-          <div className="p-2 rounded-button bg-secondary-light/50 border border-secondary/30">
-            <span className="font-semibold text-secondary-text block">Folicular</span>
+          <div className="p-2 rounded-button bg-follicular-light/50 border border-follicular/30">
+            <span className="font-semibold text-follicular-dark block">Folicular</span>
             <span className="text-text-muted text-[11px]">
               Días {safePeriod + 1} a {ovulationDay - 2}
             </span>
           </div>
 
-          <div className="p-2 rounded-button bg-primary-light/50 border border-primary/30">
-            <span className="font-semibold text-primary-text block">Ovulatoria</span>
+          <div className="p-2 rounded-button bg-ovulation-light/50 border border-ovulation/30">
+            <span className="font-semibold text-ovulation-dark block">Ovulatoria</span>
             <span className="text-text-muted text-[11px]">
               Días {ovulationDay - 1} a {ovulationDay + 1}
             </span>
           </div>
 
-          <div className="p-2 rounded-button bg-accent-light/50 border border-accent/30">
-            <span className="font-semibold text-accent-dark block">Lútea</span>
+          <div className="p-2 rounded-button bg-luteal-light/50 border border-luteal/30">
+            <span className="font-semibold text-luteal-dark block">Lútea</span>
             <span className="text-text-muted text-[11px]">
               Días {ovulationDay + 2} a {safeCycle}
             </span>

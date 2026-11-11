@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
 import { Ruler, Plus, Trash } from "@phosphor-icons/react";
 import { Card } from "@/components/Card";
 import { Button } from "@/components/Button";
@@ -42,7 +43,7 @@ export function AnthropometryTracker({
     setIsSubmitting(true);
     try {
       await onAddMeasurement({
-        date: new Date().toISOString().split("T")[0],
+        date: format(new Date(), "yyyy-MM-dd"),
         waistCm: waist,
         hipCm: hip,
         chestCm: chest,

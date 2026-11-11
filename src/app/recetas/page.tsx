@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Plus, CookingPot } from "@phosphor-icons/react";
 import { useRecipes } from "@/features/recipes";
+import { useDiary } from "@/features/diary";
 import {
   RecipeCard,
   RecipeFormModal,
@@ -12,6 +13,7 @@ import { SearchInput } from "@/components/SearchInput";
 import { Button } from "@/components/Button";
 import { EmptyState } from "@/components/EmptyState";
 import { SkeletonLoader } from "@/components/SkeletonLoader";
+import { ToastNotification } from "@/components/ToastNotification";
 import type { Recipe } from "@/types/database";
 import type { RecipeFormData } from "@/features/recipes";
 
@@ -29,10 +31,12 @@ export default function RecetasPage() {
     updateRecipe,
     deleteRecipe,
   } = useRecipes();
+  const { logRecipeServing } = useDiary();
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [viewingRecipe, setViewingRecipe] = useState<Recipe | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleOpenCreate = () => {
     setEditingRecipe(null);
@@ -42,6 +46,11 @@ export default function RecetasPage() {
   const handleOpenEdit = (recipe: Recipe) => {
     setEditingRecipe(recipe);
     setIsFormOpen(true);
+  };
+
+  const handleLogServing = async (recipe: Recipe) => {
+    await logRecipeServing("lunch", recipe, 1);
+    setToastMessage(`¡1 porción de "${recipe.name}" agregada a tu almuerzo de hoy!`);
   };
 
   const handleSaveRecipe = async (
@@ -176,6 +185,16 @@ export default function RecetasPage() {
         isOpen={Boolean(viewingRecipe)}
         onClose={() => setViewingRecipe(null)}
         recipe={viewingRecipe}
+        onLogServing={handleLogServing}
+      />
+
+      <ToastNotification
+        isOpen={Boolean(toastMessage)}
+        onClose={() => setToastMessage(null)}
+        title="Receta Registrada"
+        message={toastMessage || ""}
+        variant="success"
+        autoHideDuration={4000}
       />
     </main>
   );

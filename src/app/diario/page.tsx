@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { Plus, Barbell, Trash, PencilSimple } from "@phosphor-icons/react";
 import {
   useDiary,
@@ -22,7 +23,10 @@ import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
 import type { MealType, LoggedFoodItem, ExerciseEntry } from "@/types/database";
 
-export default function DiarioPage() {
+function DiarioContent() {
+  const searchParams = useSearchParams();
+  const dateParam = searchParams.get("date");
+
   const {
     selectedDate,
     setSelectedDate,
@@ -44,9 +48,16 @@ export default function DiarioPage() {
     setMood,
     toggleLoveNote,
     togglePeriod,
+    startNewCycle,
     applyLutealAdjustment,
     lutealAdjustmentKcal,
-  } = useDiary();
+  } = useDiary(dateParam || undefined);
+
+  useEffect(() => {
+    if (dateParam && dateParam !== selectedDate) {
+      setSelectedDate(dateParam);
+    }
+  }, [dateParam, selectedDate, setSelectedDate]);
 
   const [activeMealModal, setActiveMealModal] = useState<{
     type: MealType;
@@ -262,9 +273,11 @@ export default function DiarioPage() {
         moodNote={dailyLog.moodNote}
         hasLoveNote={dailyLog.hasLoveNote}
         isPeriodActive={dailyLog.isPeriodActive}
+        isPeriodStart={dailyLog.isPeriodStart}
         onSetMood={setMood}
         onToggleLoveNote={toggleLoveNote}
         onTogglePeriod={togglePeriod}
+        onStartNewCycle={startNewCycle}
       />
 
       {/* Modales */}
@@ -304,5 +317,21 @@ export default function DiarioPage() {
         />
       )}
     </main>
+  );
+}
+
+export default function DiarioPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="max-w-4xl mx-auto p-4 sm:p-6 flex flex-col gap-6 pb-28">
+          <div className="p-8 text-center text-sm text-text-muted">
+            Cargando diario...
+          </div>
+        </main>
+      }
+    >
+      <DiarioContent />
+    </Suspense>
   );
 }

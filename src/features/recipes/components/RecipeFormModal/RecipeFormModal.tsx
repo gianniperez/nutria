@@ -86,22 +86,30 @@ export function RecipeFormModal({
     }
   };
 
-  const handleAddIngredient = () => {
-    if (!selectedIngredientId) return;
-    const food = foods.find((f) => f.id === selectedIngredientId);
-    if (!food) return;
+  const selectedFood = foods.find((f) => f.id === selectedIngredientId);
 
-    const basePortion = food.portionGrams || 100;
+  const handleIngredientSelectChange = (id: string) => {
+    setSelectedIngredientId(id);
+    const food = foods.find((f) => f.id === id);
+    if (food) {
+      setIngredientGrams(food.portionGrams || (food.portionUnit === "unit" ? 1 : 100));
+    }
+  };
+
+  const handleAddIngredient = () => {
+    if (!selectedIngredientId || !selectedFood) return;
+
+    const basePortion = selectedFood.portionGrams || 100;
     const factor = ingredientGrams / basePortion;
 
     const newItem: RecipeItem = {
-      ingredientId: food.id,
-      ingredientName: food.name,
+      ingredientId: selectedFood.id,
+      ingredientName: selectedFood.name,
       quantityGrams: ingredientGrams,
-      calories: Math.round(food.calories * factor),
-      proteinG: Number((food.proteinG * factor).toFixed(1)),
-      carbsG: Number((food.carbsG * factor).toFixed(1)),
-      fatG: Number((food.fatG * factor).toFixed(1)),
+      calories: Math.round(selectedFood.calories * factor),
+      proteinG: Number((selectedFood.proteinG * factor).toFixed(1)),
+      carbsG: Number((selectedFood.carbsG * factor).toFixed(1)),
+      fatG: Number((selectedFood.fatG * factor).toFixed(1)),
     };
 
     setFormData((prev) => ({
@@ -207,7 +215,7 @@ export function RecipeFormModal({
                 size="sm"
                 isLoading={isSubmitting}
                 onClick={handleSubmit}
-                disabled={!formData.name.trim()}
+                disabled={!formData.name.trim() || formData.items.length === 0}
               >
                 Guardar Receta
               </Button>
@@ -317,7 +325,7 @@ export function RecipeFormModal({
                 </label>
                 <select
                   value={selectedIngredientId}
-                  onChange={(e) => setSelectedIngredientId(e.target.value)}
+                  onChange={(e) => handleIngredientSelectChange(e.target.value)}
                   className="w-full bg-surface text-text-main text-sm rounded-button border border-border px-3 py-2 shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
                 >
                   <option value="">-- Elige un ingrediente del inventario --</option>
@@ -333,13 +341,13 @@ export function RecipeFormModal({
 
               <div className="w-full sm:w-36">
                 <NumberInput
-                  label="Gramos / ml"
+                  label={`Cantidad (${selectedFood?.portionUnit || "g"})`}
                   value={ingredientGrams}
                   onChange={(val) => setIngredientGrams(val)}
                   min={1}
                   max={2000}
-                  step={10}
-                  unit="g"
+                  step={selectedFood?.portionUnit === "unit" ? 1 : 10}
+                  unit={selectedFood?.portionUnit || "g"}
                 />
               </div>
 

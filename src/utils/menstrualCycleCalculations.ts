@@ -60,22 +60,22 @@ export function getCyclePhaseInfo(
     phase = "follicular";
     phaseName = "Fase Folicular";
     phaseDescription = "Suben los estrógenos. Momento óptimo para progresiones de fuerza e hipertrofia.";
-    colorClass = "text-secondary-dark";
-    bgClass = "bg-secondary-light/40 border-secondary/40";
+    colorClass = "text-follicular-dark";
+    bgClass = "bg-follicular-light/40 border-follicular/40";
   } else if (cycleDay <= ovulationDay + 1) {
     phase = "ovulatory";
     phaseName = "Fase Ovulatoria";
     phaseDescription = "Pico máximo de energía y motivación. Gran resistencia al esfuerzo.";
-    colorClass = "text-primary-text";
-    bgClass = "bg-primary-light/40 border-primary/40";
+    colorClass = "text-ovulation-dark";
+    bgClass = "bg-ovulation-light/40 border-ovulation/40";
   } else {
     phase = "luteal";
     phaseName = "Fase Lútea";
     phaseDescription = "La progesterona eleva tu TMB (~150-200 kcal/día). Prioriza grasas saludables y autocuidado.";
     isLutealAlertActive = true;
     suggestedCalorieAdjustmentKcal = 150;
-    colorClass = "text-accent-dark";
-    bgClass = "bg-accent-light/40 border-accent/40";
+    colorClass = "text-luteal-dark";
+    bgClass = "bg-luteal-light/40 border-luteal/40";
   }
 
   // Próximo período proyectado
