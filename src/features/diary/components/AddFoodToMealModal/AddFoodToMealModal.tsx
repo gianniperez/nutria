@@ -93,8 +93,7 @@ export function AddFoodToMealModal({
 
     if (existingIndex >= 0) {
       const existing = stagedItems[existingIndex];
-      const step =
-        food.portionUnit === "unit" ? 1 : food.portionGrams || 50;
+      const step = food.portionUnit === "unit" ? 1 : food.portionGrams || 50;
       handleUpdateQuantity(existing.tempId, existing.quantity + step);
     } else {
       const defaultQty =
@@ -148,10 +147,7 @@ export function AddFoodToMealModal({
 
   // Modificar cantidad en línea en la bandeja
   const handleUpdateQuantity = (tempId: string, newQty: number) => {
-    if (newQty <= 0) {
-      handleRemoveStagedItem(tempId);
-      return;
-    }
+    if (newQty < 0) return;
 
     setStagedItems((prev) =>
       prev.map((item) => {
@@ -180,7 +176,9 @@ export function AddFoodToMealModal({
             quantity: newQty,
             unit: newQty === 1 ? "porción" : "porciones",
             calories: Math.round(item.recipe.caloriesPerServing * newQty),
-            proteinG: Number((item.recipe.proteinPerServing * newQty).toFixed(1)),
+            proteinG: Number(
+              (item.recipe.proteinPerServing * newQty).toFixed(1),
+            ),
             carbsG: Number((item.recipe.carbsPerServing * newQty).toFixed(1)),
             fatG: Number((item.recipe.fatPerServing * newQty).toFixed(1)),
           };
@@ -197,14 +195,15 @@ export function AddFoodToMealModal({
 
   // Confirmar y registrar todo el lote
   const handleConfirmBatchLog = async () => {
-    if (stagedItems.length === 0) return;
+    const validItems = stagedItems.filter((i) => i.quantity > 0);
+    if (validItems.length === 0) return;
 
     setIsLogging(true);
     try {
       if (onLogMultiple) {
-        await onLogMultiple(mealType, stagedItems);
+        await onLogMultiple(mealType, validItems);
       } else {
-        for (const item of stagedItems) {
+        for (const item of validItems) {
           if (item.type === "food" && item.food && onLogFood) {
             await onLogFood(mealType, item.food, item.quantity);
           } else if (item.type === "recipe" && item.recipe && onLogRecipe) {
@@ -273,9 +272,9 @@ export function AddFoodToMealModal({
                 const step =
                   item.type === "recipe" || item.unit === "unit"
                     ? 1
-                    : (item.food?.portionGrams && item.food.portionGrams < 50
-                        ? item.food.portionGrams
-                        : 25);
+                    : item.food?.portionGrams && item.food.portionGrams < 50
+                      ? item.food.portionGrams
+                      : 25;
 
                 return (
                   <div
@@ -287,7 +286,8 @@ export function AddFoodToMealModal({
                         {item.name}
                       </span>
                       <span className="text-[11px] text-text-muted">
-                        {item.calories} kcal · {item.proteinG}g P · {item.carbsG}g C · {item.fatG}g G
+                        {item.calories} kcal · {item.proteinG}g P ·{" "}
+                        {item.carbsG}g C · {item.fatG}g G
                       </span>
                     </div>
 
@@ -296,20 +296,56 @@ export function AddFoodToMealModal({
                       <div className="flex items-center border border-border rounded-button bg-surface-hover">
                         <button
                           type="button"
-                          onClick={() => handleUpdateQuantity(item.tempId, item.quantity - step)}
+                          onClick={() => {
+                            if (item.quantity <= step) {
+                              handleRemoveStagedItem(item.tempId);
+                            } else {
+                              handleUpdateQuantity(
+                                item.tempId,
+                                Math.max(1, item.quantity - step),
+                              );
+                            }
+                          }}
                           className="px-2 py-1 text-text-muted hover:text-text-main hover:bg-surface rounded-l-button transition-colors cursor-pointer"
                           title="Restar cantidad"
                         >
                           <Minus weight="bold" className="w-3 h-3" />
                         </button>
 
-                        <span className="px-2 text-xs font-bold text-text-main min-w-[50px] text-center select-none">
-                          {item.quantity} {item.unit}
-                        </span>
+                        <div className="flex items-center px-1 bg-surface">
+                          <input
+                            type="number"
+                            min={1}
+                            max={5000}
+                            value={item.quantity === 0 ? "" : item.quantity}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => {
+                              const val =
+                                e.target.value === ""
+                                  ? 0
+                                  : Number(e.target.value);
+                              handleUpdateQuantity(
+                                item.tempId,
+                                isNaN(val) ? 0 : Math.max(0, val),
+                              );
+                            }}
+                            className="w-14 text-center font-bold text-xs text-text-main bg-transparent outline-none py-0.5 focus:ring-1 focus:ring-primary/40 rounded"
+                            placeholder="0"
+                            aria-label={`Cantidad para ${item.name}`}
+                          />
+                          <span className="text-[11px] text-text-muted select-none pr-1">
+                            {item.unit}
+                          </span>
+                        </div>
 
                         <button
                           type="button"
-                          onClick={() => handleUpdateQuantity(item.tempId, item.quantity + step)}
+                          onClick={() =>
+                            handleUpdateQuantity(
+                              item.tempId,
+                              item.quantity + step,
+                            )
+                          }
                           className="px-2 py-1 text-text-muted hover:text-text-main hover:bg-surface rounded-r-button transition-colors cursor-pointer"
                           title="Sumar cantidad"
                         >
@@ -318,7 +354,12 @@ export function AddFoodToMealModal({
                       </div>
 
                       <IconButton
-                        icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-menstrual" />}
+                        icon={
+                          <Trash
+                            weight="bold"
+                            className="w-3.5 h-3.5 text-text-muted hover:text-menstrual"
+                          />
+                        }
                         aria-label="Quitar de la lista"
                         size="sm"
                         variant="ghost"
@@ -395,7 +436,8 @@ export function AddFoodToMealModal({
                         <span className="text-[11px] text-text-muted">
                           {food.portionGrams}
                           {food.portionUnit} — {food.calories} kcal (P:{" "}
-                          {food.proteinG}g | C: {food.carbsG}g | G: {food.fatG}g)
+                          {food.proteinG}g | C: {food.carbsG}g | G: {food.fatG}
+                          g)
                         </span>
                       </div>
                     </div>
@@ -416,7 +458,9 @@ export function AddFoodToMealModal({
                         handleToggleOrAddFood(food);
                       }}
                     >
-                      {stagedItem ? `${stagedItem.quantity} ${stagedItem.unit}` : "Elegir"}
+                      {stagedItem
+                        ? `${stagedItem.quantity} ${stagedItem.unit}`
+                        : "Elegir"}
                     </Button>
                   </div>
                 );

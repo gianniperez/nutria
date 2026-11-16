@@ -47,8 +47,8 @@ function DiarioContent() {
     endFasting,
     setMood,
     toggleLoveNote,
-    togglePeriod,
     startNewCycle,
+    endPeriod,
     applyLutealAdjustment,
     lutealAdjustmentKcal,
   } = useDiary(dateParam || undefined);
@@ -71,12 +71,18 @@ function DiarioContent() {
   } | null>(null);
 
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
-  const [editingExercise, setEditingExercise] = useState<ExerciseEntry | null>(null);
+  const [editingExercise, setEditingExercise] = useState<ExerciseEntry | null>(
+    null,
+  );
 
   // Porcentaje de calorías consumidas vs meta
-  const caloriePercentage = summary.targetCalories > 0
-    ? Math.min(100, Math.round((summary.ingestedCalories / summary.targetCalories) * 100))
-    : 0;
+  const caloriePercentage =
+    summary.targetCalories > 0
+      ? Math.min(
+          100,
+          Math.round((summary.ingestedCalories / summary.targetCalories) * 100),
+        )
+      : 0;
 
   return (
     <main className="max-w-4xl mx-auto p-4 sm:p-6 flex flex-col gap-6 pb-28">
@@ -90,14 +96,15 @@ function DiarioContent() {
               cycleInfo.phase === "menstrual"
                 ? "menstrual"
                 : cycleInfo.phase === "follicular"
-                ? "follicular"
-                : cycleInfo.phase === "ovulatory"
-                ? "ovulation"
-                : "luteal"
+                  ? "follicular"
+                  : cycleInfo.phase === "ovulatory"
+                    ? "ovulation"
+                    : "luteal"
             }
             size="sm"
           >
-            {cycleInfo.phaseName} (Día {cycleInfo.cycleDay}/{cycleInfo.totalCycleDays})
+            {cycleInfo.phaseName} (Día {cycleInfo.cycleDay}/
+            {cycleInfo.totalCycleDays})
           </Badge>
         }
       />
@@ -111,7 +118,11 @@ function DiarioContent() {
       />
 
       {/* 3. Panel Consolidado de Calorías y Macronutrientes */}
-      <Card variant="elevated" padding="lg" className="flex flex-col md:flex-row items-center gap-6">
+      <Card
+        variant="elevated"
+        padding="lg"
+        className="flex flex-col md:flex-row items-center gap-6"
+      >
         {/* Anillo de Calorías */}
         <div className="shrink-0 flex flex-col items-center text-center">
           <CircularProgress
@@ -120,7 +131,9 @@ function DiarioContent() {
             strokeWidth={10}
             color="var(--color-primary)"
           >
-            <span className="text-[11px] font-semibold text-text-muted uppercase">Restantes</span>
+            <span className="text-[11px] font-semibold text-text-muted uppercase">
+              Restantes
+            </span>
             <span className="font-display font-bold text-2xl text-text-main my-0.5">
               {summary.remainingCalories}
             </span>
@@ -129,11 +142,17 @@ function DiarioContent() {
 
           <div className="flex items-center gap-3 mt-3 text-xs text-text-muted">
             <span>
-              Ingeridas: <strong className="text-text-main">{summary.ingestedCalories}</strong>
+              Ingeridas:{" "}
+              <strong className="text-text-main">
+                {summary.ingestedCalories}
+              </strong>
             </span>
             <span>•</span>
             <span>
-              Quemadas: <strong className="text-secondary-text">+{summary.burnedCalories}</strong>
+              Quemadas:{" "}
+              <strong className="text-secondary-text">
+                +{summary.burnedCalories}
+              </strong>
             </span>
           </div>
         </div>
@@ -227,23 +246,37 @@ function DiarioContent() {
                 className="flex items-center justify-between p-2.5 bg-surface-hover/50 rounded-button border border-border/40 text-xs"
               >
                 <div className="flex flex-col">
-                  <span className="font-semibold text-text-main">{ex.name}</span>
+                  <span className="font-semibold text-text-main">
+                    {ex.name}
+                  </span>
                   <span className="text-text-muted">
                     {ex.durationMinutes} minutos —{" "}
-                    <strong className="text-secondary-text">+{ex.caloriesBurned} kcal</strong>
+                    <strong className="text-secondary-text">
+                      +{ex.caloriesBurned} kcal
+                    </strong>
                   </span>
                 </div>
 
                 <div className="flex items-center gap-0.5 shrink-0">
                   <IconButton
-                    icon={<PencilSimple weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-primary" />}
+                    icon={
+                      <PencilSimple
+                        weight="bold"
+                        className="w-3.5 h-3.5 text-text-muted hover:text-primary"
+                      />
+                    }
                     aria-label="Editar ejercicio"
                     size="sm"
                     variant="ghost"
                     onClick={() => setEditingExercise(ex)}
                   />
                   <IconButton
-                    icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted hover:text-menstrual" />}
+                    icon={
+                      <Trash
+                        weight="bold"
+                        className="w-3.5 h-3.5 text-text-muted hover:text-menstrual"
+                      />
+                    }
                     aria-label="Eliminar ejercicio"
                     size="sm"
                     variant="ghost"
@@ -274,10 +307,11 @@ function DiarioContent() {
         hasLoveNote={dailyLog.hasLoveNote}
         isPeriodActive={dailyLog.isPeriodActive}
         isPeriodStart={dailyLog.isPeriodStart}
+        isPeriodEnd={dailyLog.isPeriodEnd}
         onSetMood={setMood}
         onToggleLoveNote={toggleLoveNote}
-        onTogglePeriod={togglePeriod}
         onStartNewCycle={startNewCycle}
+        onEndPeriod={endPeriod}
       />
 
       {/* Modales */}

@@ -1,9 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Camera, Trash, Plus, ImageSquare } from "@phosphor-icons/react";
+import {
+  Camera,
+  Trash,
+  Plus,
+  ImageSquare,
+  Star,
+  X,
+} from "@phosphor-icons/react";
 import { Modal } from "@/components/Modal";
 import { Input } from "@/components/Input";
+import { SearchInput } from "@/components/SearchInput";
 import { NumberInput } from "@/components/NumberInput";
 import { Button } from "@/components/Button";
 import { IconButton } from "@/components/IconButton";
@@ -45,10 +53,26 @@ export function RecipeFormModal({
   const [tagInput, setTagInput] = useState("");
   const [selectedIngredientId, setSelectedIngredientId] = useState("");
   const [ingredientGrams, setIngredientGrams] = useState(100);
+  const [ingredientSearch, setIngredientSearch] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setIsSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (editingRecipe) {
@@ -66,10 +90,16 @@ export function RecipeFormModal({
       setFormData(DEFAULT_FORM);
       setTagInput("");
     }
+    setSelectedIngredientId("");
+    setIngredientSearch("");
+    setIsSearchOpen(false);
   }, [editingRecipe, isOpen]);
 
   // Cálculos en vivo
-  const calculatedMacros = calculateRecipeMacros(formData.items, formData.servings);
+  const calculatedMacros = calculateRecipeMacros(
+    formData.items,
+    formData.servings,
+  );
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,12 +118,13 @@ export function RecipeFormModal({
 
   const selectedFood = foods.find((f) => f.id === selectedIngredientId);
 
-  const handleIngredientSelectChange = (id: string) => {
-    setSelectedIngredientId(id);
-    const food = foods.find((f) => f.id === id);
-    if (food) {
-      setIngredientGrams(food.portionGrams || (food.portionUnit === "unit" ? 1 : 100));
-    }
+  const handleSelectFood = (food: (typeof foods)[0]) => {
+    setSelectedIngredientId(food.id);
+    setIngredientGrams(
+      food.portionGrams || (food.portionUnit === "unit" ? 1 : 100),
+    );
+    setIngredientSearch("");
+    setIsSearchOpen(false);
   };
 
   const handleAddIngredient = () => {
@@ -119,6 +150,8 @@ export function RecipeFormModal({
 
     setSelectedIngredientId("");
     setIngredientGrams(100);
+    setIngredientSearch("");
+    setIsSearchOpen(false);
   };
 
   const handleRemoveIngredient = (index: number) => {
@@ -166,7 +199,7 @@ export function RecipeFormModal({
           tags: parsedTags,
           steps: cleanSteps,
         },
-        editingRecipe?.id
+        editingRecipe?.id,
       );
       onClose();
     } finally {
@@ -181,6 +214,14 @@ export function RecipeFormModal({
       onClose();
     }
   };
+
+  const matchingFoods = foods.filter(
+    (f) =>
+      ingredientSearch.trim() === "" ||
+      f.name.toLowerCase().includes(ingredientSearch.toLowerCase()) ||
+      (f.brand &&
+        f.brand.toLowerCase().includes(ingredientSearch.toLowerCase())),
+  );
 
   return (
     <>
@@ -207,7 +248,12 @@ export function RecipeFormModal({
             )}
 
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="sm" onClick={onClose} disabled={isSubmitting}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                disabled={isSubmitting}
+              >
                 Cancelar
               </Button>
               <Button
@@ -235,12 +281,17 @@ export function RecipeFormModal({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <ImageSquare weight="duotone" className="w-8 h-8 text-text-muted/60" />
+                <ImageSquare
+                  weight="duotone"
+                  className="w-8 h-8 text-text-muted/60"
+                />
               )}
             </div>
 
             <div className="flex flex-col gap-1 flex-1">
-              <span className="text-xs font-semibold text-text-main">Foto de la Receta</span>
+              <span className="text-xs font-semibold text-text-main">
+                Foto de la Receta
+              </span>
               <div className="flex items-center gap-2 mt-1">
                 <input
                   type="file"
@@ -266,7 +317,9 @@ export function RecipeFormModal({
                     variant="ghost"
                     size="sm"
                     className="text-menstrual"
-                    onClick={() => setFormData((prev) => ({ ...prev, imageUrl: "" }))}
+                    onClick={() =>
+                      setFormData((prev) => ({ ...prev, imageUrl: "" }))
+                    }
                   >
                     Quitar
                   </Button>
@@ -281,7 +334,9 @@ export function RecipeFormModal({
               <Input
                 label="Nombre de la Receta *"
                 value={formData.name}
-                onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, name: e.target.value }))
+                }
                 placeholder="Ej. Tarta de Espinaca y Ricota..."
                 required
               />
@@ -290,7 +345,9 @@ export function RecipeFormModal({
             <NumberInput
               label="Porciones Totales"
               value={formData.servings}
-              onChange={(val) => setFormData((prev) => ({ ...prev, servings: val }))}
+              onChange={(val) =>
+                setFormData((prev) => ({ ...prev, servings: val }))
+              }
               min={1}
               max={30}
               step={1}
@@ -301,7 +358,9 @@ export function RecipeFormModal({
           <Input
             label="Descripción o Notas (Opcional)"
             value={formData.description}
-            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, description: e.target.value }))
+            }
             placeholder="Ej. Ideal para preparar el domingo y freezar para la semana."
           />
 
@@ -318,50 +377,122 @@ export function RecipeFormModal({
               Ingredientes de la Receta ({formData.items.length})
             </span>
 
-            <div className="flex flex-col sm:flex-row items-end gap-2">
-              <div className="flex-1 w-full flex flex-col gap-1">
-                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">
-                  Seleccionar Alimento
-                </label>
-                <select
-                  value={selectedIngredientId}
-                  onChange={(e) => handleIngredientSelectChange(e.target.value)}
-                  className="w-full bg-surface text-text-main text-sm rounded-button border border-border px-3 py-2 shadow-xs focus:outline-none focus:ring-2 focus:ring-primary/40"
-                >
-                  <option value="">-- Elige un ingrediente del inventario --</option>
-                  {foods.map((food) => (
-                    <option key={food.id} value={food.id}>
-                      {food.isFavorite ? "⭐ " : ""}
-                      {food.name} ({food.calories} kcal / {food.portionGrams}
-                      {food.portionUnit})
-                    </option>
-                  ))}
-                </select>
-              </div>
+            {selectedFood ? (
+              <div className="flex flex-col sm:flex-row items-center justify-between p-3 bg-surface rounded-card border border-primary/50 gap-3">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {selectedFood.isFavorite && (
+                    <Star
+                      weight="fill"
+                      className="w-4 h-4 text-accent shrink-0"
+                    />
+                  )}
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-semibold text-xs sm:text-sm text-text-main truncate">
+                      {selectedFood.name}
+                    </span>
+                    <span className="text-[11px] text-text-muted">
+                      {selectedFood.portionGrams} {selectedFood.portionUnit} ={" "}
+                      {selectedFood.calories} kcal
+                    </span>
+                  </div>
+                </div>
 
-              <div className="w-full sm:w-36">
-                <NumberInput
-                  label={`Cantidad (${selectedFood?.portionUnit || "g"})`}
-                  value={ingredientGrams}
-                  onChange={(val) => setIngredientGrams(val)}
-                  min={1}
-                  max={2000}
-                  step={selectedFood?.portionUnit === "unit" ? 1 : 10}
-                  unit={selectedFood?.portionUnit || "g"}
-                />
-              </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="w-32">
+                    <NumberInput
+                      label={`Cantidad (${selectedFood.portionUnit || "g"})`}
+                      value={ingredientGrams}
+                      onChange={(val) => setIngredientGrams(val)}
+                      min={1}
+                      max={2000}
+                      step={selectedFood.portionUnit === "unit" ? 1 : 10}
+                      unit={selectedFood.portionUnit || "g"}
+                    />
+                  </div>
 
-              <Button
-                type="button"
-                variant="secondary"
-                size="md"
-                disabled={!selectedIngredientId}
-                onClick={handleAddIngredient}
-                leftIcon={<Plus weight="bold" className="w-4 h-4" />}
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    onClick={handleAddIngredient}
+                    leftIcon={<Plus weight="bold" className="w-3.5 h-3.5" />}
+                  >
+                    Agregar
+                  </Button>
+
+                  <IconButton
+                    icon={
+                      <X
+                        weight="bold"
+                        className="w-3.5 h-3.5 text-text-muted hover:text-text-main"
+                      />
+                    }
+                    aria-label="Cambiar alimento seleccionado"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => setSelectedIngredientId("")}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                ref={searchContainerRef}
+                className="relative flex flex-col gap-1"
               >
-                Agregar
-              </Button>
-            </div>
+                <label className="text-xs font-semibold uppercase tracking-wider text-text-muted">
+                  Buscar Ingrediente en Inventario ({foods.length} disponibles)
+                </label>
+                <SearchInput
+                  value={ingredientSearch}
+                  onChange={(val) => {
+                    setIngredientSearch(val);
+                    setIsSearchOpen(true);
+                  }}
+                  placeholder="Escribe para buscar (ej. Avena, Huevo, Leche)..."
+                />
+
+                {isSearchOpen && (
+                  <div className="absolute top-full left-0 right-0 z-30 mt-1 max-h-52 overflow-y-auto bg-surface border border-border rounded-card shadow-lg p-1.5 flex flex-col gap-1">
+                    {matchingFoods.length > 0 ? (
+                      matchingFoods.map((food) => (
+                        <button
+                          key={food.id}
+                          type="button"
+                          onClick={() => handleSelectFood(food)}
+                          className="flex items-center justify-between p-2 rounded-button text-left hover:bg-surface-hover transition-colors cursor-pointer select-none"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            {food.isFavorite && (
+                              <Star
+                                weight="fill"
+                                className="w-3.5 h-3.5 text-accent shrink-0"
+                              />
+                            )}
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-semibold text-xs text-text-main truncate">
+                                {food.name}
+                              </span>
+                              <span className="text-[10px] text-text-muted">
+                                {food.portionGrams} {food.portionUnit} ·{" "}
+                                {food.calories} kcal (P: {food.proteinG}g · C:{" "}
+                                {food.carbsG}g · G: {food.fatG}g)
+                              </span>
+                            </div>
+                          </div>
+                          <span className="text-xs font-semibold text-primary px-2 py-0.5 rounded bg-primary-light/50 shrink-0 ml-2">
+                            Elegir
+                          </span>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-3 text-center text-xs text-text-muted">
+                        No se encontraron ingredientes con ese nombre.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Lista de Ingredientes Agregados */}
             {formData.items.length > 0 ? (
@@ -372,15 +503,22 @@ export function RecipeFormModal({
                     className="flex items-center justify-between p-2.5 bg-surface rounded-button border border-border text-xs"
                   >
                     <div className="flex flex-col">
-                      <span className="font-semibold text-text-main">{item.ingredientName}</span>
+                      <span className="font-semibold text-text-main">
+                        {item.ingredientName}
+                      </span>
                       <span className="text-text-muted">
-                        {item.quantityGrams}g — {item.calories} kcal (P: {item.proteinG}g | C:{" "}
-                        {item.carbsG}g | G: {item.fatG}g)
+                        {item.quantityGrams}g — {item.calories} kcal (P:{" "}
+                        {item.proteinG}g | C: {item.carbsG}g | G: {item.fatG}g)
                       </span>
                     </div>
 
                     <IconButton
-                      icon={<Trash weight="bold" className="w-3.5 h-3.5 text-menstrual" />}
+                      icon={
+                        <Trash
+                          weight="bold"
+                          className="w-3.5 h-3.5 text-menstrual"
+                        />
+                      }
                       aria-label="Eliminar ingrediente"
                       size="sm"
                       variant="ghost"
@@ -404,15 +542,26 @@ export function RecipeFormModal({
                   Por 1 Porción ({calculatedMacros.caloriesPerServing} kcal):
                 </span>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  <MacroNutrientPill type="protein" value={calculatedMacros.proteinPerServing} />
-                  <MacroNutrientPill type="carbs" value={calculatedMacros.carbsPerServing} />
-                  <MacroNutrientPill type="fat" value={calculatedMacros.fatPerServing} />
+                  <MacroNutrientPill
+                    type="protein"
+                    value={calculatedMacros.proteinPerServing}
+                  />
+                  <MacroNutrientPill
+                    type="carbs"
+                    value={calculatedMacros.carbsPerServing}
+                  />
+                  <MacroNutrientPill
+                    type="fat"
+                    value={calculatedMacros.fatPerServing}
+                  />
                 </div>
               </div>
 
               <div className="text-right text-xs text-text-muted">
                 <span>Total de la preparación: </span>
-                <span className="font-bold text-text-main">{calculatedMacros.totalCalories} kcal</span>
+                <span className="font-bold text-text-main">
+                  {calculatedMacros.totalCalories} kcal
+                </span>
               </div>
             </div>
           </div>
@@ -425,7 +574,9 @@ export function RecipeFormModal({
 
             {formData.steps.map((step, idx) => (
               <div key={idx} className="flex items-center gap-2">
-                <span className="text-xs font-bold text-text-muted w-4">{idx + 1}.</span>
+                <span className="text-xs font-bold text-text-muted w-4">
+                  {idx + 1}.
+                </span>
                 <Input
                   value={step}
                   onChange={(e) => handleStepChange(idx, e.target.value)}
@@ -433,7 +584,12 @@ export function RecipeFormModal({
                 />
                 {formData.steps.length > 1 && (
                   <IconButton
-                    icon={<Trash weight="bold" className="w-3.5 h-3.5 text-text-muted" />}
+                    icon={
+                      <Trash
+                        weight="bold"
+                        className="w-3.5 h-3.5 text-text-muted"
+                      />
+                    }
                     aria-label="Eliminar paso"
                     size="sm"
                     variant="ghost"

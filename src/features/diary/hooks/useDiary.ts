@@ -475,6 +475,42 @@ export function useDiary(initialDate?: string) {
     await updateProfile({ lastPeriodDate: selectedDate });
   }, [profile, selectedDate, dailyLog, persistLog, userId, updateProfile]);
 
+  const endPeriod = useCallback(async () => {
+    const baseDate = parseISO(selectedDate);
+
+    // Si ya estaba marcado como fin, al volver a pulsar desmarca el sangrado de este día
+    if (dailyLog.isPeriodEnd) {
+      await persistLog({
+        ...dailyLog,
+        isPeriodActive: false,
+        isPeriodStart: false,
+        isPeriodEnd: false,
+      });
+      return;
+    }
+
+    // 1. Marcar la fecha seleccionada como final del período
+    await persistLog({
+      ...dailyLog,
+      isPeriodActive: true,
+      isPeriodEnd: true,
+    });
+
+    // 2. Limpiar período en los días subsiguientes proyectados (hasta 10 días adelante)
+    for (let i = 1; i <= 10; i++) {
+      const dStr = format(addDays(baseDate, i), "yyyy-MM-dd");
+      const existing = await diaryApi.getDailyLog(dStr);
+      if (existing && existing.isPeriodActive && !existing.isPeriodStart) {
+        await diaryApi.saveDailyLog({
+          ...existing,
+          isPeriodActive: false,
+          isPeriodEnd: false,
+          updatedAt: Date.now(),
+        });
+      }
+    }
+  }, [dailyLog, persistLog, selectedDate]);
+
   const togglePeriod = useCallback(async () => {
     const nextIsActive = !dailyLog.isPeriodActive;
     await persistLog({
@@ -511,6 +547,7 @@ export function useDiary(initialDate?: string) {
     toggleLoveNote,
     togglePeriod,
     startNewCycle,
+    endPeriod,
     applyLutealAdjustment,
     lutealAdjustmentKcal: effectiveLutealAdjustmentKcal,
   };
